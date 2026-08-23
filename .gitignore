@@ -103,6 +103,12 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
+# Specification files (Keep off public GitHub)
+QSENTINEL_Architecture.md
+QSENTINEL_Implementation_Blueprint_final.md
+QSENTINEL_Implementation_Blueprint.md
+*.md.bak
+
 # IDEs and Editors
 .idea/
 .vscode/

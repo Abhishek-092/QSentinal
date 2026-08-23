@@ -80,8 +80,11 @@ class ArtifactRepository:
                 return None
 
             payload = json.loads(row["json_payload"])
-            recomputed = compute_sha256_hash(payload)
-            if recomputed != content_hash:
+            payload_copy = dict(payload)
+            stored_hash = payload_copy.pop("content_hash", None)
+            recomputed = compute_sha256_hash(payload_copy)
+
+            if content_hash != stored_hash or recomputed != content_hash:
                 raise CryptographicIntegrityError(
                     f"DB Tamper Alert! Artifact {content_hash} payload failed hash verification."
                 )

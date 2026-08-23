@@ -64,7 +64,7 @@ def test_wilson_confidence_interval_bounds():
     assert l0 == 0.0 and u0 > 0.0
 
     l1, u1 = compute_wilson_score_interval(k=50, n=50)
-    assert l1 < 1.0 and u1 == 1.0
+    assert l1 < 1.0 and abs(u1 - 1.0) < 1e-6
 
 
 def test_single_terminal_classification_honest_stream(sample_stage1_artifact, sample_stage2_artifact):

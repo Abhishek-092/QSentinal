@@ -49,8 +49,9 @@ def _compute_transcript_fingerprint(transcript: SessionTranscript) -> str:
     """Computes a deterministic fingerprint of a SessionTranscript content."""
     payload = {
         "session_id": transcript.session_id,
-        "n_qubits": transcript.n_qubits,
-        "sample_size": transcript.sample_size,
+        "nonce": transcript.nonce,
+        "n_keys": len(transcript.keys),
+        "n_sifted": len(transcript.sifted_indices),
         "decision_accepted": transcript.protocol_decision.accepted,
         "decision_reason": transcript.protocol_decision.reason,
     }
@@ -183,8 +184,9 @@ class TransactionalSessionRunner:
 
         transcript_json = canonical_json_dumps({
             "session_id": transcript.session_id,
-            "n_qubits": transcript.n_qubits,
-            "sample_size": transcript.sample_size,
+            "sender_id": transcript.sender_id,
+            "recipient_id": transcript.recipient_id,
+            "nonce": transcript.nonce,
         })
         evidence_json = canonical_json_dumps(result.evidence)
         assessment_json = canonical_json_dumps(result.threat_assessment)

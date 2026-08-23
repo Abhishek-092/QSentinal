@@ -15,7 +15,8 @@ import os
 import tempfile
 import pytest
 
-from qds.transcript import run_session, SessionConfig, SessionTranscript
+from qds.protocol import run_session, SessionConfig
+from qds.transcript import SessionTranscript
 from qsentinel_monitor.persistence.database import init_database
 from qsentinel_monitor.persistence.serializers import compute_sha256_hash
 from qsentinel_monitor.persistence.models import (

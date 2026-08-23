@@ -16,6 +16,7 @@ import pytest
 
 from qds.protocol import run_session, SessionConfig
 from qsentinel_monitor.persistence.database import init_database
+from qsentinel_monitor.persistence.serializers import compute_sha256_hash
 from qsentinel_monitor.persistence.models import (
     ConflictingSessionIdError,
     CryptographicIntegrityError,
@@ -39,33 +40,39 @@ def temp_db():
 
 @pytest.fixture
 def mock_artifacts():
-    st1 = CalibrationArtifact(
-        schema_version="1.0",
-        architecture_version="v5.0",
-        stage1_model_version="v1.0",
-        calibration_configuration={"n_qubits": 200, "alpha": 0.01, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02]},
-        seed_provenance={"purpose": "CALIBRATION", "schedule_version": "v1.0", "seed_start": 0, "seed_count": 300, "mapping": "linear"},
-        calibration_table=[{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "empirical_critical_value": 3.84, "asymptotic_reference_applicability": "REGULAR_CHI2_DF1", "asymptotic_critical_value": 3.84, "n_trials": 100, "quantile_probability": 0.99}],
-        content_hash="art_st1_hash",
-    )
-    st2 = Stage2CalibrationArtifact(
-        schema_version="1.0",
-        architecture_version="v6.0",
-        stage2_model_version="v1.0",
-        calibration_configuration={"n_qubits": 200, "alpha": 0.01, "horizon_sessions": 2, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02], "quantile_method": "weibull", "calibration_guarantee": "HORIZON_BOUNDED", "calibrated_statistic": "MAX_CUMULATIVE_EVIDENCE"},
-        seed_provenance={"purpose": "CALIBRATION", "schedule_version": "v2.0", "seed_start": 0, "seed_count": 1500, "seed_unit": "STREAM", "mapping": "linear", "child_seed_derivation": "sha256_v1"},
-        calibration_table=[{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "empirical_critical_value": 100.0, "max_statistic_mean": 1.0, "max_statistic_std": 0.5, "n_trials": 100, "quantile_probability": 0.99}],
-        content_hash="art_st2_hash",
-    )
-    cp = ChangePointCalibrationArtifact(
-        schema_version="1.0",
-        architecture_version="v8.0",
-        changepoint_model_version="v1.0",
-        calibration_configuration={"n_qubits": 200, "alpha": 0.01, "horizon_sessions": 5, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02], "quantile_method": "weibull", "calibration_guarantee": "HORIZON_BOUNDED", "calibrated_statistic": "MAX_OFFSET_CUSUM", "offset_formula": "d(p) = mu_H0(p) + delta(p)", "delta_offset_margin": 0.05},
-        seed_provenance={"purpose": "CALIBRATION", "schedule_version": "v2.0", "seed_start": 0, "seed_count": 1500, "seed_unit": "STREAM", "mapping": "linear", "child_seed_derivation": "sha256_v1"},
-        calibration_table=[{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "null_mean_glr": 0.02, "delta_offset_margin": 0.05, "null_offset_d": 0.07, "empirical_critical_value": 100.0, "max_cusum_mean": 0.2, "max_cusum_std": 0.1, "n_trials": 100, "quantile_probability": 0.99}],
-        content_hash="art_cp_hash",
-    )
+    p1 = {
+        "schema_version": "1.0",
+        "architecture_version": "v5.0",
+        "stage1_model_version": "v1.0",
+        "calibration_configuration": {"n_qubits": 200, "alpha": 0.01, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02]},
+        "seed_provenance": {"purpose": "CALIBRATION", "schedule_version": "v1.0", "seed_start": 0, "seed_count": 300, "mapping": "linear"},
+        "calibration_table": [{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "empirical_critical_value": 3.84, "asymptotic_reference_applicability": "REGULAR_CHI2_DF1", "asymptotic_critical_value": 3.84, "n_trials": 100, "quantile_probability": 0.99}],
+    }
+    p1["content_hash"] = compute_sha256_hash(p1)
+    st1 = CalibrationArtifact(**p1)
+
+    p2 = {
+        "schema_version": "1.0",
+        "architecture_version": "v6.0",
+        "stage2_model_version": "v1.0",
+        "calibration_configuration": {"n_qubits": 200, "alpha": 0.01, "horizon_sessions": 2, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02], "quantile_method": "weibull", "calibration_guarantee": "HORIZON_BOUNDED", "calibrated_statistic": "MAX_CUMULATIVE_EVIDENCE"},
+        "seed_provenance": {"purpose": "CALIBRATION", "schedule_version": "v2.0", "seed_start": 0, "seed_count": 1500, "seed_unit": "STREAM", "mapping": "linear", "child_seed_derivation": "sha256_v1"},
+        "calibration_table": [{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "empirical_critical_value": 100.0, "max_statistic_mean": 1.0, "max_statistic_std": 0.5, "n_trials": 100, "quantile_probability": 0.99}],
+    }
+    p2["content_hash"] = compute_sha256_hash(p2)
+    st2 = Stage2CalibrationArtifact(**p2)
+
+    p3 = {
+        "schema_version": "1.0",
+        "architecture_version": "v8.0",
+        "changepoint_model_version": "v1.0",
+        "calibration_configuration": {"n_qubits": 200, "alpha": 0.01, "horizon_sessions": 5, "n_trials_per_grid_point": 100, "p_grid": [0.0, 0.02], "quantile_method": "weibull", "calibration_guarantee": "HORIZON_BOUNDED", "calibrated_statistic": "MAX_OFFSET_CUSUM", "offset_formula": "d(p) = mu_H0(p) + delta(p)", "delta_offset_margin": 0.05},
+        "seed_provenance": {"purpose": "CALIBRATION", "schedule_version": "v2.0", "seed_start": 0, "seed_count": 1500, "seed_unit": "STREAM", "mapping": "linear", "child_seed_derivation": "sha256_v1"},
+        "calibration_table": [{"p": 0.02, "null_classification": "REGULAR_INTERIOR_NULL", "null_mean_glr": 0.02, "delta_offset_margin": 0.05, "null_offset_d": 0.07, "empirical_critical_value": 100.0, "max_cusum_mean": 0.2, "max_cusum_std": 0.1, "n_trials": 100, "quantile_probability": 0.99}],
+    }
+    p3["content_hash"] = compute_sha256_hash(p3)
+    cp = ChangePointCalibrationArtifact(**p3)
+
     return st1, st2, cp
 
 

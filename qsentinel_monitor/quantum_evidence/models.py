@@ -75,6 +75,27 @@ class QuantumEvidence:
     x_mismatch_rate: float
     raw_evidence_summary: Dict[str, Any]
 
+    @property
+    def mismatch_rate(self) -> float:
+        return self.overall_mismatch_rate
+
+    @property
+    def correlation(self) -> float:
+        return 1.0 - 2.0 * self.overall_mismatch_rate
+
+    @property
+    def entropy(self) -> float:
+        p = self.overall_mismatch_rate
+        if p <= 0 or p >= 1:
+            return 0.0
+        import math
+        return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
+
+    @property
+    def pauli_consistency(self) -> float:
+        return max(0.0, 1.0 - 2.0 * self.overall_mismatch_rate)
+
+
 
 @dataclass(frozen=True)
 class Stage1Result:
@@ -90,6 +111,27 @@ class Stage1Result:
     uncalibrated_theoretical_p_value: Optional[float]  # Clearly labeled as theoretical / uncalibrated
     optimization_success: bool
     diagnostic_info: Dict[str, Any]
+
+    @property
+    def p_hat(self) -> float:
+        return self.best_fit_p
+
+    @property
+    def ll_ratio(self) -> float:
+        return self.statistic
+
+    @property
+    def passed(self) -> bool:
+        return self.status == "PROCESSED" and self.statistic < 3.841
+
+    @property
+    def details(self) -> str:
+        return f"Stage 1 status={self.status}, T={self.statistic:.4f}, p_hat={self.best_fit_p:.4f}"
+
+    @property
+    def optimizer_converged(self) -> bool:
+        return self.optimization_success
+
 
 
 @dataclass(frozen=True)

@@ -30,18 +30,29 @@ class SessionConfig:
     seed: Optional[int] = None
 
 
-def run_session(config: SessionConfig) -> SessionTranscript:
+def run_session(
+    config_or_session_id: SessionConfig | str = "default_session",
+    noise_p: float = 0.02,
+    attack: str | None = None,
+    seed: Optional[int] = None,
+    n_qubits: int = 200,
+) -> SessionTranscript:
     """
     Orchestrates one complete teleportation-distributed QS-L signature session.
-    1. Key & basis generation
-    2. Pauli eigenstate encoding
-    3. Quantum teleportation over noisy channel
-    4. Recipient measurement & BB84 sifting
-    5. Asymmetric threshold verification (s_a < s_v)
-    6. Assembles & returns frozen SessionTranscript with immutable tuples.
+    Accepts either a SessionConfig object or direct parameter arguments.
     """
+    if isinstance(config_or_session_id, SessionConfig):
+        config = config_or_session_id
+        session_id = str(uuid.uuid4())
+    else:
+        session_id = str(config_or_session_id)
+        config = SessionConfig(
+            n_qubits=n_qubits,
+            noise_parameter_p=noise_p,
+            seed=seed,
+        )
+
     rng = np.random.default_rng(config.seed)
-    session_id = str(uuid.uuid4())
     nonce = config.nonce or str(uuid.uuid4())
 
     keys = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]

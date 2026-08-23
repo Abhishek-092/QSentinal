@@ -33,4 +33,5 @@ python_functions = "test_*"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["qds*", "qsentinel_monitor*", "attacks*", "experiments*", "api*", "db*"]
+include = ["qds*", "qsentinel_monitor*", "qsentinel_api*", "attacks*", "experiments*", "api*", "db*"]
+

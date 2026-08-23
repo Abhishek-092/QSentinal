@@ -20,6 +20,17 @@ from qsentinel_monitor.threat_models import UnifiedMonitoringState
 from qsentinel_monitor.calibrated_decision import evaluate_calibrated_stage1
 
 
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class MonitoringDecision:
+    session_id: str
+    verdict: str
+    advisory: bool
+    stage1_passed: bool
+    details: str
+
+
 def analyze_session(
     transcript: SessionTranscript,
     calibration_artifact: Optional[CalibrationArtifact] = None,
@@ -60,3 +71,27 @@ def analyze_session(
         calibrated_decision=calibrated_dec,
         is_advisory=True,
     )
+
+
+def analyze(transcript: SessionTranscript, protocol_decision: ProtocolDecision) -> MonitoringDecision:
+    """Legacy/convenience wrapper for advisory monitoring analysis."""
+    res = analyze_session(transcript)
+    mismatch_rate = res.evidence.overall_mismatch_rate
+    if not res.stage1_result.passed:
+        verdict = "MODEL_INVALID" if res.stage1_result.optimizer_converged is False else "FLAG_REJECT"
+    elif mismatch_rate > 0.10:
+        verdict = "FLAG_REJECT"
+    elif mismatch_rate > 0.05:
+        verdict = "FLAG_INVESTIGATE"
+    else:
+        verdict = "ACCEPT"
+    
+    return MonitoringDecision(
+        session_id=transcript.session_id,
+        verdict=verdict,
+        advisory=True,
+        stage1_passed=res.stage1_result.passed,
+        details=res.stage1_result.details,
+    )
+
+

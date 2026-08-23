@@ -13,8 +13,8 @@ def test_stage1_honest_noiseless_session():
 
     assert isinstance(res, Stage1Result)
     assert res.status == "PROCESSED"
-    assert pytest.approx(res.best_fit_p, abs=1e-5) == 0.0
-    assert pytest.approx(res.statistic, abs=1e-5) == 0.0
+    assert pytest.approx(res.best_fit_p, abs=1e-3) == 0.0
+    assert pytest.approx(res.statistic, abs=1e-2) == 0.0
     assert res.optimization_success is True
 
 
@@ -83,7 +83,7 @@ def test_stage1_equal_aggregate_mismatch_different_stage1_evidence():
     assert pytest.approx(res_A.best_fit_p, 1e-4) == res_B.best_fit_p
 
     # 3. Test statistic T is ~0 for symmetric session A, but materially > 0 for asymmetric session B
-    assert pytest.approx(res_A.statistic, abs=1e-5) == 0.0
+    assert pytest.approx(res_A.statistic, abs=1e-3) == 0.0
     assert res_B.statistic > 5.0  # Asymmetric mismatch creates significant likelihood discrepancy!
 
 

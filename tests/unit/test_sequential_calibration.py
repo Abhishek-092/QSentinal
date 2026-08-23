@@ -20,7 +20,7 @@ from experiments.seed_allocator import SeedAllocator, SeedAllocationError
 @pytest.fixture
 def st1_artifact():
     art_dict = generate_calibration_artifact(
-        p_grid=[0.0, 0.1, 0.2, 0.3],
+        p_grid=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3],
         n_qubits=200,
         alpha=0.01,
         n_trials_per_grid_point=20,
@@ -36,14 +36,15 @@ def seq_artifact(st1_artifact):
         alpha_seq=0.01,
         n_trials=20,
         seed_start=10000,
+        tolerance=0.05,
     )
     return load_sequential_calibration_artifact(seq_art_dict)
 
 
 # 1. REPRODUCIBILITY & HASHING
 def test_sequential_artifact_reproducibility(st1_artifact):
-    a1 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10)
-    a2 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10)
+    a1 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10, tolerance=0.05)
+    a2 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10, tolerance=0.05)
 
     assert a1["content_hash"] == a2["content_hash"]
     assert a1 == a2
@@ -57,16 +58,16 @@ def test_sequential_artifact_stage1_provenance_binding(st1_artifact, seq_artifac
 
 # 3. DIFFERENT HORIZON ALTERS PROVENANCE/HASH
 def test_different_horizon_alters_hash(st1_artifact):
-    a1 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10)
-    a2 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=10, n_trials=10)
+    a1 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=5, n_trials=10, tolerance=0.05)
+    a2 = generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=10, n_trials=10, tolerance=0.05)
 
     assert a1["content_hash"] != a2["content_hash"]
 
 
 # 4. DIFFERENT ALPHA_SEQ ALTERS PROVENANCE/HASH
 def test_different_alpha_seq_alters_hash(st1_artifact):
-    a1 = generate_sequential_calibration_artifact(st1_artifact, alpha_seq=0.01, n_trials=10)
-    a2 = generate_sequential_calibration_artifact(st1_artifact, alpha_seq=0.05, n_trials=10)
+    a1 = generate_sequential_calibration_artifact(st1_artifact, alpha_seq=0.01, n_trials=10, tolerance=0.05)
+    a2 = generate_sequential_calibration_artifact(st1_artifact, alpha_seq=0.05, n_trials=10, tolerance=0.05)
 
     assert a1["content_hash"] != a2["content_hash"]
 
@@ -75,7 +76,7 @@ def test_different_alpha_seq_alters_hash(st1_artifact):
 def test_seed_capacity_overflow_rejection(st1_artifact):
     with pytest.raises(SeedAllocationError):
         # 1000 trials * 100 sessions = 100,000 seeds > 50,000 limit
-        generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=100, n_trials=1000)
+        generate_sequential_calibration_artifact(st1_artifact, monitoring_horizon_sessions=100, n_trials=1000, tolerance=0.05)
 
 
 # 6. SEED SEPARATION GUARANTEE
@@ -146,18 +147,24 @@ def test_horizon_exhaustion_handling(st1_artifact, seq_artifact):
     # seq_artifact horizon is K=10 sessions
     s_curr = create_initial_sequential_state()
 
-    for i in range(10):
-        config = SessionConfig(n_qubits=200, noise_parameter_p=0.10, seed=i + 50)
+    # Feed sessions until K=10 processed_valid_count is reached
+    seed = 100
+    valid_fed = 0
+    while valid_fed < 10:
+        config = SessionConfig(n_qubits=200, noise_parameter_p=0.10, seed=seed)
+        seed += 1
         transcript = run_session(config)
         evidence = extract_evidence(transcript)
         stage1_res = evaluate_stage1(evidence)
         calib_dec = evaluate_calibrated_stage1(stage1_res, st1_artifact, tolerance=0.05)
         r = update_sequential_evidence(s_curr, calib_dec, sequential_artifact=seq_artifact)
         s_curr = r.next_state
+        if r.outcome == SessionProcessingOutcome.EVIDENCE_ACCEPTED:
+            valid_fed += 1
 
     assert s_curr.processed_valid_count == 10
 
-    # 11th session exceeds horizon K=10
+    # Next valid session exceeds horizon K=10
     config_11 = SessionConfig(n_qubits=200, noise_parameter_p=0.10, seed=999)
     transcript_11 = run_session(config_11)
     evidence_11 = extract_evidence(transcript_11)

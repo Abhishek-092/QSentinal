@@ -40,21 +40,21 @@ class ArtifactRepository:
     @staticmethod
     def save_artifact(db_path: str, artifact_type: str, artifact_payload: Dict[str, Any]) -> str:
         """Stores artifact payload and returns its verified content hash."""
-        content_hash = artifact_payload.get("content_hash")
-        if not content_hash:
-            content_hash = compute_sha256_hash(artifact_payload)
-            artifact_payload["content_hash"] = content_hash
+        payload_copy = dict(artifact_payload)
+        content_hash = payload_copy.pop("content_hash", None)
+        recomputed_hash = compute_sha256_hash(payload_copy)
 
-        # Verify integrity before persisting
-        recomputed_hash = compute_sha256_hash(artifact_payload)
-        if recomputed_hash != content_hash:
+        if content_hash is not None and content_hash != recomputed_hash:
             raise CryptographicIntegrityError(
                 f"Artifact content_hash mismatch: declared {content_hash} != recomputed {recomputed_hash}"
             )
 
-        schema_ver = artifact_payload.get("schema_version", "1.0")
-        arch_ver = artifact_payload.get("architecture_version", "v9.0")
-        json_payload_str = canonical_json_dumps(artifact_payload)
+        content_hash = recomputed_hash
+        payload_copy["content_hash"] = content_hash
+
+        schema_ver = payload_copy.get("schema_version", "1.0")
+        arch_ver = payload_copy.get("architecture_version", "v9.0")
+        json_payload_str = canonical_json_dumps(payload_copy)
 
         with transaction_scope(db_path) as conn:
             conn.execute(

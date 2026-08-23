@@ -14,12 +14,19 @@ from qsentinel_monitor.quantum_evidence.models import (
     CalibratedStage1Decision,
 )
 from qsentinel_monitor.calibration_loader import CalibrationArtifact
+from qsentinel_monitor.stage2_calibration_loader import Stage2CalibrationArtifact
+from qsentinel_monitor.changepoint_calibration_loader import ChangePointCalibrationArtifact
+from qsentinel_monitor.threat_models import UnifiedMonitoringState
 from qsentinel_monitor.calibrated_decision import evaluate_calibrated_stage1
 
 
 def analyze_session(
     transcript: SessionTranscript,
     calibration_artifact: Optional[CalibrationArtifact] = None,
+    stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
+    changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+    previous_unified_state: Optional[UnifiedMonitoringState] = None,
+    calibration_p: float = 0.02,
 ) -> MonitoringResult:
     """
     Orchestrates post-session advisory monitoring on a finalized SessionTranscript.

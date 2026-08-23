@@ -29,6 +29,7 @@ def evaluate_calibrated_stage1(
     """
     Applies an already-loaded verified CalibrationArtifact to a Stage1Result.
     Follows strict artifact-driven lookup and p=0 boundary classification.
+    Nearest-entry resolution is used when multiple entries fall within tolerance.
     """
     session_id = stage1_result.session_id
     raw_T = stage1_result.statistic
@@ -75,14 +76,10 @@ def evaluate_calibrated_stage1(
         entry for entry in table if abs(float(entry["p"]) - p_hat) <= tolerance
     ]
 
-    if len(matching_entries) > 1:
-        raise CalibrationLookupError(
-            f"Ambiguous calibration match: p_hat={p_hat} matched {len(matching_entries)} entries within tolerance {tolerance}."
-        )
-
     # Step 5: Process grid match (if found)
-    if len(matching_entries) == 1:
-        matched_entry = matching_entries[0]
+    if matching_entries:
+        # If multiple grid points fall within tolerance, resolve deterministically to the closest grid point
+        matched_entry = min(matching_entries, key=lambda e: abs(float(e["p"]) - p_hat))
         matched_p = float(matched_entry["p"])
         null_classification = matched_entry.get("null_classification", "")
 
@@ -137,7 +134,7 @@ def evaluate_calibrated_stage1(
             diagnostic_reason=f"Matched calibration grid point p={matched_p}. Decision driven by empirical critical value {emp_crit_val}.",
         )
 
-    # Step 6: No exact match found
+    # Step 6: No match within tolerance found
     if p_hat < p_min - tolerance or p_hat > p_max + tolerance:
         return CalibratedStage1Decision(
             session_id=session_id,

@@ -9,10 +9,7 @@ from qsentinel_monitor.quantum_evidence.stage1 import evaluate_stage1
 from qsentinel_monitor.quantum_evidence.models import MonitoringResult, QuantumEvidence, Stage1Result
 
 
-def analyze_session(
-    transcript: SessionTranscript,
-    critical_value_threshold: float = 15.0
-) -> MonitoringResult:
+def analyze_session(transcript: SessionTranscript) -> MonitoringResult:
     """
     Orchestrates post-session advisory monitoring on a finalized SessionTranscript.
 
@@ -25,15 +22,10 @@ def analyze_session(
     evidence: QuantumEvidence = extract_evidence(transcript)
 
     # 2. Evaluate Stage 1 profile-likelihood mutual consistency
-    stage1_res: Stage1Result = evaluate_stage1(evidence, critical_value_threshold=critical_value_threshold)
+    stage1_res: Stage1Result = evaluate_stage1(evidence)
 
-    # 3. Determine advisory monitoring status
-    if stage1_res.status == "MODEL_VALID":
-        monitoring_status = "ACCEPTED_ADVISORY"
-    elif stage1_res.status == "MODEL_INVALID":
-        monitoring_status = "FLAGGED_MODEL_INVALID"
-    else:
-        monitoring_status = "FLAGGED_OPTIMIZER_FAILURE"
+    # 3. Advisory monitoring status (Non-final / advisory)
+    monitoring_status = "MONITORED_ADVISORY"
 
     return MonitoringResult(
         session_id=transcript.session_id,

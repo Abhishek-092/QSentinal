@@ -10,11 +10,12 @@ Verifies:
 6. Detector elevation freezing epoch lifecycle
 7. Explicit epoch renewal and clean index increments
 """
+from dataclasses import replace
 import os
 import tempfile
 import pytest
 
-from qds.protocol import run_session, SessionConfig
+from qds.transcript import run_session, SessionConfig, SessionTranscript
 from qsentinel_monitor.persistence.database import init_database
 from qsentinel_monitor.persistence.serializers import compute_sha256_hash
 from qsentinel_monitor.persistence.models import (
@@ -115,25 +116,7 @@ def test_session_runner_restart_recovery_and_idempotency(temp_db, mock_artifacts
     # Conflicting session ID submission (reusing session_id with different nonce/transcript content)
     tr1_conflict = run_session(SessionConfig(noise_parameter_p=0.02, seed=1, nonce="n1_CONFLICTING"))
     # Manually override session_id to mimic session ID reuse with conflicting content
-    tr1_conflict = SessionTranscript(
-        session_id=tr1.session_id,
-        timestamp=tr1_conflict.timestamp,
-        sender_id=tr1_conflict.sender_id,
-        recipient_id=tr1_conflict.recipient_id,
-        auth_token=tr1_conflict.auth_token,
-        nonce="n1_CONFLICTING",
-        message_bit=tr1_conflict.message_bit,
-        keys=tr1_conflict.keys,
-        bases=tr1_conflict.bases,
-        recipient_bases=tr1_conflict.recipient_bases,
-        bell_outcomes=tr1_conflict.bell_outcomes,
-        raw_measurements=tr1_conflict.raw_measurements,
-        sifted_indices=tr1_conflict.sifted_indices,
-        mismatch_flags=tr1_conflict.mismatch_flags,
-        pauli_corrections_applied=tr1_conflict.pauli_corrections_applied,
-        protocol_decision=tr1_conflict.protocol_decision,
-        metadata=tr1_conflict.metadata,
-    )
+    tr1_conflict = replace(tr1_conflict, session_id=tr1.session_id)
     with pytest.raises(ConflictingSessionIdError, match="reused with conflicting transcript content"):
         runner.process_session(
             epoch.epoch_id, tr1_conflict, stage1_artifact=st1, stage2_artifact=st2, changepoint_artifact=cp

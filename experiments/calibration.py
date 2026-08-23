@@ -157,3 +157,9 @@ def generate_calibration_artifact(
     artifact_dict = dict(canonical_payload)
     artifact_dict["content_hash"] = content_hash
     return artifact_dict
+
+
+def run_monte_carlo_calibration(n_simulations: int = 1000) -> Dict[str, Any]:
+    """Compatibility wrapper for api/main.py trigger_calibration route."""
+    return generate_calibration_artifact(n_trials_per_grid_point=max(10, n_simulations // 7))
+

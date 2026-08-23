@@ -1,8 +1,8 @@
 """
-Phase 6B Sequential Evidence Domain Models & State Transitions for QSENTINEL.
+Phase 6B/6C Sequential Evidence Domain Models & State Transitions for QSENTINEL.
 
 Defines immutable sequential evidence state, session processing outcome enums,
-provenance contracts, and decision status.
+provenance contracts, and decision status including Phase 6C calibrated threshold & horizon exhaustion.
 """
 from dataclasses import dataclass
 from enum import Enum
@@ -18,6 +18,7 @@ class SessionProcessingOutcome(str, Enum):
     UNAVAILABLE_CALIBRATION = "UNAVAILABLE_CALIBRATION"
     UNAVAILABLE_STAGE1 = "UNAVAILABLE_STAGE1"
     INVALID_NUMERICAL_INPUT = "INVALID_NUMERICAL_INPUT"
+    HORIZON_EXCEEDED = "HORIZON_EXCEEDED"
 
 
 class SequentialDecisionStatus(str, Enum):
@@ -25,6 +26,8 @@ class SequentialDecisionStatus(str, Enum):
     SEQUENTIAL_EVIDENCE_ELEVATED = "SEQUENTIAL_EVIDENCE_ELEVATED"
     SEQUENTIAL_UNINITIALIZED = "SEQUENTIAL_UNINITIALIZED"
     SEQUENTIAL_PROVENANCE_MISMATCH = "SEQUENTIAL_PROVENANCE_MISMATCH"
+    SEQUENTIAL_UNCALIBRATED = "SEQUENTIAL_UNCALIBRATED"
+    SEQUENTIAL_HORIZON_EXCEEDED = "SEQUENTIAL_HORIZON_EXCEEDED"
 
 
 @dataclass(frozen=True)

@@ -8,7 +8,11 @@ from qds.bell_pair import prepare_bell_pair, tensor_product, KET_0, KET_1, GATE_
 from qds.pauli import correct_pauli
 
 
-def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tuple[Tuple[int, int], np.ndarray]:
+def teleport(
+    message_state: np.ndarray,
+    rng: np.random.Generator = None,
+    apply_correction: bool = True,
+) -> Tuple[Tuple[int, int], np.ndarray]:
     """
     Executes quantum teleportation of message_state (1 qubit) using a Bell pair.
     Returns:
@@ -18,6 +22,7 @@ def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tupl
     """
     if rng is None:
         rng = np.random.default_rng()
+
 
     bell_pair = prepare_bell_pair()
     # 3-qubit joint state: message ⊗ bell_pair (dim 8)
@@ -79,6 +84,10 @@ def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tupl
     bob_state /= np.linalg.norm(bob_state)
 
     # 4. Apply Pauli corrections on Bob's qubit
-    corrected_bob_state = correct_pauli(bob_state, b0_outcome, b1_outcome)
+    if apply_correction:
+        corrected_bob_state = correct_pauli(bob_state, b0_outcome, b1_outcome)
+    else:
+        corrected_bob_state = bob_state
 
     return (b0_outcome, b1_outcome), corrected_bob_state
+

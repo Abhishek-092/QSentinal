@@ -1,9 +1,10 @@
 """
 QS-L Teleportation-Distributed Quantum Digital Signature Protocol Verification Core.
 Executes protocol sessions and enforces the authoritative asymmetric threshold rule: s_a < s_v.
+Output arrays are stored as immutable tuples in SessionTranscript.
 """
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 import time
 import uuid
 import numpy as np
@@ -37,7 +38,7 @@ def run_session(config: SessionConfig) -> SessionTranscript:
     3. Quantum teleportation over noisy channel
     4. Recipient measurement & BB84 sifting
     5. Asymmetric threshold verification (s_a < s_v)
-    6. Assembles & returns frozen SessionTranscript
+    6. Assembles & returns frozen SessionTranscript with immutable tuples.
     """
     rng = np.random.default_rng(config.seed)
     session_id = str(uuid.uuid4())
@@ -75,7 +76,6 @@ def run_session(config: SessionConfig) -> SessionTranscript:
     sifted_len = len(sifted_indices)
 
     # Asymmetric threshold rule: s_a < s_v
-    # Default thresholds: s_a = 0.15 * sifted_len, s_v = 0.30 * sifted_len
     s_a = config.s_a_threshold if config.s_a_threshold is not None else int(np.floor(0.15 * sifted_len))
     s_v = config.s_v_threshold if config.s_v_threshold is not None else (0.30 * sifted_len)
 
@@ -100,14 +100,14 @@ def run_session(config: SessionConfig) -> SessionTranscript:
         auth_token=config.auth_token,
         nonce=nonce,
         message_bit=config.message_bit,
-        keys=keys,
-        bases=bases,
-        recipient_bases=recipient_bases,
-        bell_outcomes=bell_outcomes,
-        raw_measurements=raw_measurements,
-        sifted_indices=sifted_indices,
-        mismatch_flags=mismatch_flags,
-        pauli_corrections_applied=pauli_corrections,
+        keys=tuple(keys),
+        bases=tuple(bases),
+        recipient_bases=tuple(recipient_bases),
+        bell_outcomes=tuple(bell_outcomes),
+        raw_measurements=tuple(raw_measurements),
+        sifted_indices=tuple(sifted_indices),
+        mismatch_flags=tuple(mismatch_flags),
+        pauli_corrections_applied=tuple(pauli_corrections),
         protocol_decision=protocol_decision,
         metadata={"noise_parameter_p": config.noise_parameter_p}
     )

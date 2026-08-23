@@ -79,6 +79,9 @@ def _serialize_session(
     transcript: Any,
     monitoring: Any,
 ) -> dict[str, Any]:
+    mismatch_rate = transcript.measurement_telemetry.get("mismatch_rate", 0.0)
+    cusum_update = _cusum.update(session_id, mismatch_rate)
+
     return {
         "session_id": session_id,
         "protocol_decision": {
@@ -92,11 +95,12 @@ def _serialize_session(
             "stage1_passed": monitoring.stage1_passed,
             "stage2_passed": monitoring.stage2_passed,
             "fsm_passed": monitoring.fsm_passed,
-            "cusum_value": monitoring.cusum_value,
-            "drift_detected": monitoring.drift_detected,
+            "cusum_value": cusum_update.cusum_value,
+            "drift_detected": cusum_update.drift_detected,
         },
         "telemetry": transcript.measurement_telemetry,
     }
+
 
 
 @router.get("/health")
@@ -140,6 +144,8 @@ async def session_stream(
             transcript = run_session(session_id, noise_p=noise_p, theta=theta)
         decision = analyze(transcript, transcript.protocol_decision)
         append_log_entry(transcript.protocol_decision, decision, transcript.measurement_telemetry)
+        mismatch_rate = transcript.measurement_telemetry.get("mismatch_rate", 0.0)
+        cusum_update = _cusum.update(session_id, mismatch_rate)
         yield {
             "event": "complete",
             "data": _dumps({
@@ -153,8 +159,8 @@ async def session_stream(
                 "monitoring": {
                     "stage1_passed": decision.stage1_passed,
                     "stage2_passed": decision.stage2_passed,
-                    "cusum_value": decision.cusum_value,
-                    "drift_detected": decision.drift_detected,
+                    "cusum_value": cusum_update.cusum_value,
+                    "drift_detected": cusum_update.drift_detected,
                 },
             }),
         }

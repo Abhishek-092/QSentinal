@@ -77,6 +77,7 @@ def generate_sequential_calibration_artifact(
     n_trials: int = 2000,
     seed_start: int = 10000,  # Offset within CALIBRATION range [0, 50_000)
     honest_p_list: Optional[List[float]] = None,
+    tolerance: float = 0.05,
     schema_version: str = "1.0",
     architecture_version: str = "v5.0",
     stage1_model_version: str = "v1.0",
@@ -116,7 +117,7 @@ def generate_sequential_calibration_artifact(
             transcript = run_session(config)
             evidence = extract_evidence(transcript)
             stage1_res = evaluate_stage1(evidence)
-            calib_dec = evaluate_calibrated_stage1(stage1_res, stage1_artifact)
+            calib_dec = evaluate_calibrated_stage1(stage1_res, stage1_artifact, tolerance=tolerance)
 
             res = update_sequential_evidence(seq_state, calib_dec)
             seq_state = res.next_state

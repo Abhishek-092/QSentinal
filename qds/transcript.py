@@ -1,10 +1,10 @@
 """
 Immutable domain objects for QDS session execution.
-SessionTranscript and ProtocolDecision are frozen dataclasses to guarantee
-strict non-interference and prevent post-finalization state mutations.
+SessionTranscript and ProtocolDecision are frozen dataclasses with deep immutability
+(tuples instead of lists) to guarantee strict non-interference.
 """
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Sequence
 
 
 @dataclass(frozen=True)
@@ -27,13 +27,13 @@ class SessionTranscript:
     auth_token: str
     nonce: str
     message_bit: int
-    keys: List[int]
-    bases: List[int]
-    recipient_bases: List[int]
-    bell_outcomes: List[Tuple[int, int]]
-    raw_measurements: List[int]
-    sifted_indices: List[int]
-    mismatch_flags: List[bool]
-    pauli_corrections_applied: List[Tuple[int, int]]
+    keys: Tuple[int, ...]
+    bases: Tuple[int, ...]
+    recipient_bases: Tuple[int, ...]
+    bell_outcomes: Tuple[Tuple[int, int], ...]
+    raw_measurements: Tuple[int, ...]
+    sifted_indices: Tuple[int, ...]
+    mismatch_flags: Tuple[bool, ...]
+    pauli_corrections_applied: Tuple[Tuple[int, int], ...]
     protocol_decision: ProtocolDecision
     metadata: Dict[str, Any]

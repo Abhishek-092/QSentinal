@@ -152,7 +152,7 @@ def generate_changepoint_calibration_artifact(
             stream_seed = seed_start + grid_idx * n_trials_per_grid_point + trial_idx
             for session_idx in range(1, horizon_sessions + 1):
                 child_seed = derive_child_seed(stream_seed, grid_idx, trial_idx, session_idx)
-                cfg = SessionConfig(n_qubits=n_qubits, p_channel=p, seed=child_seed)
+                cfg = SessionConfig(n_qubits=n_qubits, noise_parameter_p=p, seed=child_seed)
                 transcript = run_session(cfg)
                 ev = extract_evidence(transcript)
                 st1 = evaluate_stage1(ev)
@@ -172,7 +172,7 @@ def generate_changepoint_calibration_artifact(
             max_c = 0.0
             for session_idx in range(1, horizon_sessions + 1):
                 child_seed = derive_child_seed(stream_seed, grid_idx, trial_idx, session_idx)
-                cfg = SessionConfig(n_qubits=n_qubits, p_channel=p, seed=child_seed)
+                cfg = SessionConfig(n_qubits=n_qubits, noise_parameter_p=p, seed=child_seed)
                 transcript = run_session(cfg)
                 ev = extract_evidence(transcript)
                 st1 = evaluate_stage1(ev)

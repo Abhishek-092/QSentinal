@@ -1,8 +1,10 @@
 """
-Phase 6B Sequential Evidence Engine for QSENTINEL.
+Phase 6B/6C Sequential Evidence Engine for QSENTINEL.
 
 Pure, deterministic state transition function:
 previous_state + decision -> SequentialUpdateResult(previous_state, next_state, outcome, ...)
+
+Supports optional dependency injection of a verified SequentialCalibrationArtifact for Phase 6C calibrated decision thresholding.
 
 PERFORMS ZERO DISK IO, ZERO ARTIFACT LOADING, ZERO SEED ALLOCATION, ZERO MONTE CARLO SIMULATION,
 AND ZERO QDS PROTOCOL MUTATION.
@@ -21,6 +23,7 @@ from qsentinel_monitor.sequential_evidence_models import (
     ProvenanceIdentity,
     SequentialUpdateResult,
 )
+from qsentinel_monitor.sequential_calibration_loader import SequentialCalibrationArtifact
 
 
 def create_initial_sequential_state() -> SequentialEvidenceState:
@@ -41,7 +44,8 @@ def update_sequential_evidence(
     previous_state: SequentialEvidenceState,
     decision: CalibratedStage1Decision,
     sequence_number: Optional[int] = None,
-    threshold_t_seq: float = 15.0,
+    sequential_artifact: Optional[SequentialCalibrationArtifact] = None,
+    threshold_t_seq: Optional[float] = None,
 ) -> SequentialUpdateResult:
     """
     Computes deterministic state transition:
@@ -85,7 +89,7 @@ def update_sequential_evidence(
     else:
         next_seq_num = previous_state.last_accepted_sequence_number + 1
 
-    # Rule 3: Provenance compatibility check
+    # Rule 3: Provenance compatibility check (Stage 1 calibration provenance)
     current_prov = ProvenanceIdentity(
         artifact_content_hash=decision.artifact_content_hash,
         artifact_schema_version=decision.artifact_schema_version,
@@ -104,6 +108,49 @@ def update_sequential_evidence(
                 diagnostic_reason="Incoming decision has incompatible calibration artifact provenance.",
             )
     target_provenance = previous_state.provenance_identity or current_prov
+
+    # Rule 3b: Phase 6C Sequential Artifact Provenance & Horizon Binding
+    effective_threshold: float = 15.0  # Fallback uncalibrated threshold if none provided
+    monitoring_horizon: Optional[int] = None
+
+    if sequential_artifact is not None:
+        st1_prov = sequential_artifact.stage1_calibration_provenance
+        if st1_prov.get("artifact_content_hash") != decision.artifact_content_hash:
+            return SequentialUpdateResult(
+                previous_state=previous_state,
+                next_state=previous_state,
+                outcome=SessionProcessingOutcome.INCOMPATIBLE_PROVENANCE,
+                decision_evaluated=decision,
+                evidence_delta=0.0,
+                diagnostic_reason="Sequential calibration artifact bound to different Stage 1 calibration hash.",
+            )
+        effective_threshold = float(sequential_artifact.empirical_sequential_threshold)
+        monitoring_horizon = int(sequential_artifact.sequential_configuration.get("monitoring_horizon_sessions", 0))
+
+    elif threshold_t_seq is not None:
+        effective_threshold = threshold_t_seq
+
+    # Rule 3c: Horizon Exhaustion Check (counts evidence-accepted sequential observations)
+    if monitoring_horizon is not None and monitoring_horizon > 0:
+        if previous_state.processed_valid_count >= monitoring_horizon:
+            next_state = SequentialEvidenceState(
+                cumulative_evidence=previous_state.cumulative_evidence,
+                processed_valid_count=previous_state.processed_valid_count,
+                skipped_session_count=previous_state.skipped_session_count + 1,
+                last_accepted_session_id=previous_state.last_accepted_session_id,
+                last_accepted_sequence_number=previous_state.last_accepted_sequence_number,
+                provenance_identity=previous_state.provenance_identity,
+                decision_status=SequentialDecisionStatus.SEQUENTIAL_HORIZON_EXCEEDED,
+                history_session_ids=previous_state.history_session_ids,
+            )
+            return SequentialUpdateResult(
+                previous_state=previous_state,
+                next_state=next_state,
+                outcome=SessionProcessingOutcome.HORIZON_EXCEEDED,
+                decision_evaluated=decision,
+                evidence_delta=0.0,
+                diagnostic_reason=f"Monitoring horizon K={monitoring_horizon} exhausted. Sequential calibration threshold validity boundary reached.",
+            )
 
     # Rule 4: Non-contributing inputs / skip checks
     if decision.lookup_status == CalibrationLookupStatus.STAGE1_UNAVAILABLE:
@@ -204,11 +251,14 @@ def update_sequential_evidence(
     evidence_delta = float(raw_T - crit_val)
     new_cum_evidence = float(previous_state.cumulative_evidence + evidence_delta)
 
-    new_decision_status = (
-        SequentialDecisionStatus.SEQUENTIAL_EVIDENCE_ELEVATED
-        if new_cum_evidence > threshold_t_seq
-        else SequentialDecisionStatus.SEQUENTIAL_NOMINAL
-    )
+    if sequential_artifact is None and threshold_t_seq is None:
+        new_decision_status = SequentialDecisionStatus.SEQUENTIAL_UNCALIBRATED
+    else:
+        new_decision_status = (
+            SequentialDecisionStatus.SEQUENTIAL_EVIDENCE_ELEVATED
+            if new_cum_evidence > effective_threshold
+            else SequentialDecisionStatus.SEQUENTIAL_NOMINAL
+        )
 
     new_history = previous_state.history_session_ids + (session_id,)
 
@@ -229,5 +279,5 @@ def update_sequential_evidence(
         outcome=SessionProcessingOutcome.EVIDENCE_ACCEPTED,
         decision_evaluated=decision,
         evidence_delta=evidence_delta,
-        diagnostic_reason=f"Evidence accepted (delta={evidence_delta:.4f}, total={new_cum_evidence:.4f}).",
+        diagnostic_reason=f"Evidence accepted (delta={evidence_delta:.4f}, total={new_cum_evidence:.4f}, threshold={effective_threshold:.4f}).",
     )

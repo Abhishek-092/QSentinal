@@ -30,8 +30,8 @@ class ReadinessResponse(BaseModel):
 # --- Stream Schemas ---
 
 class StreamCreateRequest(BaseModel):
-    stream_id: str = Field(..., example="stream-alice-bob-01")
-    description: Optional[str] = Field("", example="QDS Channel between Alice and Bob")
+    stream_id: str = Field(..., json_schema_extra={"example": "stream-alice-bob-01"})
+    description: Optional[str] = Field("", json_schema_extra={"example": "QDS Channel between Alice and Bob"})
 
 
 class StreamResponse(BaseModel):
@@ -44,7 +44,7 @@ class StreamResponse(BaseModel):
 # --- Epoch Schemas ---
 
 class EpochCreateRequest(BaseModel):
-    calibration_p: float = Field(0.02, example=0.02, description="Explicit channel noise operating point")
+    calibration_p: float = Field(0.02, json_schema_extra={"example": 0.02}, description="Explicit channel noise operating point")
     additional_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
@@ -63,7 +63,7 @@ class EpochResponse(BaseModel):
 
 
 class EpochRenewRequest(BaseModel):
-    calibration_p: float = Field(0.02, example=0.02)
+    calibration_p: float = Field(0.02, json_schema_extra={"example": 0.02})
     termination_reason: Optional[str] = Field("EXPLICIT_RENEWAL")
     additional_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
 

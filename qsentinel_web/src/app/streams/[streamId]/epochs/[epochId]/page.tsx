@@ -147,7 +147,7 @@ export default function EpochConsolePage({ params }: { params: Promise<{ streamI
           </div>
 
           <div className="p-5 bg-zinc-950 border border-zinc-800 rounded space-y-2">
-            <span className="text-xs font-mono text-zinc-500 block">SEQUENCE PROGRESS ($k / H$)</span>
+            <span className="text-xs font-mono text-zinc-500 block">SEQUENCE PROGRESS (k / H)</span>
             <div className="font-mono text-lg font-bold text-zinc-100 pt-1">
               SESSION #{state?.sequence_number || 0}
             </div>
@@ -188,9 +188,9 @@ export default function EpochConsolePage({ params }: { params: Promise<{ streamI
                 </div>
 
                 <div className="p-3 bg-zinc-900/60 border border-zinc-800 rounded">
-                  <span className="text-zinc-500 block mb-1">ESTIMATED EXCURSION ONSET ($\hat{\tau}$):</span>
+                  <span className="text-zinc-500 block mb-1">ESTIMATED EXCURSION ONSET:</span>
                   <span className="text-zinc-200 font-bold">
-                    {assessment.estimated_excursion_onset !== null
+                    {assessment.estimated_excursion_onset !== null && assessment.estimated_excursion_onset !== undefined
                       ? `SESSION #${assessment.estimated_excursion_onset}`
                       : "NONE DETECTED"}
                   </span>
@@ -219,7 +219,7 @@ export default function EpochConsolePage({ params }: { params: Promise<{ streamI
                 <span className="text-zinc-200">{state?.stage2_processed_count || 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">CUMULATIVE GLR EVIDENCE ($S_k$):</span>
+                <span className="text-zinc-500">CUMULATIVE GLR EVIDENCE (S_k):</span>
                 <span className="text-emerald-400 font-bold">
                   {state?.stage2_cumulative_glr !== undefined
                     ? state.stage2_cumulative_glr.toFixed(4)
@@ -238,7 +238,7 @@ export default function EpochConsolePage({ params }: { params: Promise<{ streamI
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-zinc-500">CUSUM STATISTIC ($C_k$):</span>
+                <span className="text-zinc-500">CUSUM STATISTIC (C_k):</span>
                 <span className="text-emerald-400 font-bold">
                   {state?.changepoint_cusum_statistic !== undefined
                     ? state.changepoint_cusum_statistic.toFixed(4)
@@ -246,11 +246,11 @@ export default function EpochConsolePage({ params }: { params: Promise<{ streamI
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">ACTIVE RUN LENGTH ($N_k$):</span>
+                <span className="text-zinc-500">ACTIVE RUN LENGTH (N_k):</span>
                 <span className="text-zinc-200">{state?.changepoint_active_run_length || 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">ESTIMATED EXCURSION ONSET ($\hat{\tau}$):</span>
+                <span className="text-zinc-500">ESTIMATED EXCURSION ONSET:</span>
                 <span className="text-zinc-200">
                   {state?.changepoint_estimated_onset !== null && state?.changepoint_estimated_onset !== undefined
                     ? `SESSION #${state.changepoint_estimated_onset}`

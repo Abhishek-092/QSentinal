@@ -36,6 +36,7 @@ def run_session(
     attack: str | None = None,
     seed: Optional[int] = None,
     n_qubits: int = 200,
+    theta: float = np.pi / 4,
 ) -> SessionTranscript:
     """
     Orchestrates one complete teleportation-distributed QS-L signature session.
@@ -124,3 +125,36 @@ def run_session(
     )
 
     return transcript
+
+
+def iterate_session(
+    session_id: str,
+    noise_p: float = 0.02,
+    attack: str | None = None,
+    theta: float = np.pi / 4,
+):
+    """Yield live stage events followed by final transcript for SSE streaming."""
+    phases = [
+        ("Initialize computational vacuum |000⟩", 10),
+        ("Distribute Bell pair |Φ+⟩ on qubits 1,2", 30),
+        (f"Encode message state R_y({theta:.3f})|0⟩", 50),
+        (f"Depolarizing channel with noise_p={noise_p:.3f}", 70),
+        ("Teleportation & Pauli corrections", 90),
+    ]
+    for phase, progress in phases:
+        yield {
+            "phase": phase,
+            "step": phase,
+            "progress": progress,
+            "snapshot": {"mismatch_rate": noise_p, "fidelity": 1.0 - noise_p},
+        }
+
+    transcript = run_session(session_id, noise_p=noise_p, attack=attack, theta=theta)
+    yield {
+        "phase": "QS-L decision",
+        "step": "QS-L decision",
+        "progress": 100,
+        "snapshot": transcript.measurement_telemetry,
+        "transcript": transcript,
+    }
+

@@ -1,10 +1,56 @@
 """
-Domain models for QSENTINEL quantum evidence collection and Stage 1 monitoring.
+Domain models for QSENTINEL quantum evidence collection, Stage 1 monitoring, and calibrated decision contracts.
 All domain objects use deeply immutable dataclasses with tuples.
 """
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, Dict, Any, Tuple
 from qds.transcript import ProtocolDecision, SessionTranscript
+
+
+class CalibrationLookupStatus(str, Enum):
+    EXACT_MATCH = "EXACT_MATCH"
+    DEGENERATE_BOUNDARY = "DEGENERATE_BOUNDARY"
+    CALIBRATION_UNAVAILABLE = "CALIBRATION_UNAVAILABLE"
+    CALIBRATION_OUT_OF_SUPPORT = "CALIBRATION_OUT_OF_SUPPORT"
+    STAGE1_UNAVAILABLE = "STAGE1_UNAVAILABLE"
+
+
+class CalibratedDecisionStatus(str, Enum):
+    MODEL_CONSISTENT = "MODEL_CONSISTENT"
+    MODEL_INCONSISTENT = "MODEL_INCONSISTENT"
+    DEGENERATE_BOUNDARY = "DEGENERATE_BOUNDARY"
+    CALIBRATION_UNAVAILABLE = "CALIBRATION_UNAVAILABLE"
+    CALIBRATION_OUT_OF_SUPPORT = "CALIBRATION_OUT_OF_SUPPORT"
+    STAGE1_UNAVAILABLE = "STAGE1_UNAVAILABLE"
+
+
+@dataclass(frozen=True)
+class CalibratedStage1Decision:
+    """
+    Immutable result of applying a verified offline CalibrationArtifact to a Stage1Result.
+    Preserves full artifact provenance for end-to-end auditability.
+    """
+    session_id: str
+    raw_statistic_t: float
+    fitted_p_hat: float
+
+    lookup_status: CalibrationLookupStatus
+    decision: CalibratedDecisionStatus
+
+    matched_calibration_p: Optional[float]
+
+    empirical_critical_value: Optional[float]
+    asymptotic_critical_value: Optional[float]
+
+    margin_to_critical_value: Optional[float]
+
+    artifact_content_hash: str
+    artifact_schema_version: str
+    architecture_version: str
+    stage1_model_version: str
+
+    diagnostic_reason: str
 
 
 @dataclass(frozen=True)
@@ -49,7 +95,7 @@ class Stage1Result:
 @dataclass(frozen=True)
 class MonitoringResult:
     """
-    Advisory monitoring decision combining evidence and Stage 1 results.
+    Advisory monitoring decision combining evidence, Stage 1 results, and optional calibrated decision.
     Guaranteed strictly advisory: never mutates or overrides ProtocolDecision.
     """
     session_id: str
@@ -57,4 +103,5 @@ class MonitoringResult:
     monitoring_status: str  # e.g., "MONITORED_ADVISORY"
     evidence: QuantumEvidence
     stage1_result: Stage1Result
+    calibrated_decision: Optional[CalibratedStage1Decision] = None
     is_advisory: bool = True

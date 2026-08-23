@@ -26,24 +26,23 @@ def _joint_negative_log_likelihood(p: float, m_obs: float, C_obs: float, H_obs: 
     - Expected correlation: E[C|p] = 1 - 2p
     - Expected entropy: E[H|p] = H(p) = -p log2(p) - (1-p) log2(1-p)
     """
-    p_clamped = float(np.clip(p, 1e-7, 0.5 - 1e-7))
+    p_clamped = float(np.clip(p, 1e-6, 0.5 - 1e-6))
 
     # 1. Binomial mismatch likelihood: k = m_obs * n_sifted
     k = m_obs * n_sifted
-    # Binomial log-pdf: k log(p) + (n-k) log(1-p)
     nll_m = -(k * np.log(p_clamped) + (n_sifted - k) * np.log(1.0 - p_clamped))
 
     # 2. Consistency of C_obs with predicted C(p) = 1 - 2p
-    # Variance of correlation estimator under n_sifted trials is Var(C) = 4 p (1-p) / n_sifted
     C_pred = 1.0 - 2.0 * p_clamped
-    var_C = max(4.0 * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-8)
+    # Variance of sample correlation estimator under n_sifted trials
+    var_C = max(4.0 * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-5)
     nll_C = 0.5 * np.log(2.0 * np.pi * var_C) + 0.5 * ((C_obs - C_pred) ** 2) / var_C
 
     # 3. Consistency of H_obs with predicted H(p)
     H_pred = -p_clamped * np.log2(p_clamped) - (1.0 - p_clamped) * np.log2(1.0 - p_clamped)
-    # Variance of entropy estimator under delta method: Var(H) ≈ (log2((1-p)/p))^2 * p(1-p) / n_sifted
+    # Variance of entropy estimator under delta method
     grad_H = np.log2((1.0 - p_clamped) / p_clamped) if 0.0 < p_clamped < 0.5 else 0.0
-    var_H = max((grad_H ** 2) * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-8)
+    var_H = max((grad_H ** 2) * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-5)
     nll_H = 0.5 * np.log(2.0 * np.pi * var_H) + 0.5 * ((H_obs - H_pred) ** 2) / var_H
 
     # Total joint NLL (jointly parameterized by p, NOT multiplied independent probabilities)
@@ -66,6 +65,21 @@ def evaluate_stage1(
 
     # Numerical safeguards for 0 mismatch / perfect observations
     if m_obs <= 0.0:
+        # Check if C_obs or H_obs violate p=0 (C=1, H=0)
+        c_inconsistent = abs(C_obs - 1.0) > 0.05
+        h_inconsistent = abs(H_obs - 0.0) > 0.05
+        if c_inconsistent or h_inconsistent:
+            stat = 100.0
+            return Stage1Result(
+                session_id=session_id,
+                status="MODEL_INVALID",
+                model_valid=False,
+                best_fit_p=0.0,
+                statistic=stat,
+                p_value=0.0,
+                optimization_success=True,
+                diagnostic_info={"note": "Zero mismatch but C/H violate p=0 expectation"},
+            )
         return Stage1Result(
             session_id=session_id,
             status="MODEL_VALID",
@@ -111,14 +125,21 @@ def evaluate_stage1(
 
     best_fit_p = float(res.x)
 
-    # Compute unconstrained / saturated model loss (where p_m = m_obs, p_C matches C_obs, p_H matches H_obs)
-    sat_loss = _joint_negative_log_likelihood(m_obs, m_obs, C_obs, H_obs, n_sifted)
+    # Unconstrained saturated model: each metric fits its own implied p
+    # p_m = m_obs, p_C = (1 - C_obs)/2, p_H = inverse_H(H_obs)
+    # The discrepancy between best_fit_p NLL and saturated model NLL yields profile statistic T
+    p_C_implied = np.clip((1.0 - C_obs) / 2.0, 1e-6, 0.5 - 1e-6)
+    sat_nll_m = -(m_obs * n_sifted * np.log(np.clip(m_obs, 1e-6, 0.5)) + (n_sifted - m_obs * n_sifted) * np.log(1.0 - np.clip(m_obs, 1e-6, 0.5)))
+    sat_nll_C = 0.5 * np.log(2.0 * np.pi * max(4.0 * p_C_implied * (1.0 - p_C_implied) / float(n_sifted), 1e-5))
+    sat_nll_H = 0.5 * np.log(2.0 * np.pi * 1e-5)
+    sat_loss = sat_nll_m + sat_nll_C + sat_nll_H
+
     min_loss = float(res.fun)
 
-    # Profile likelihood ratio statistic T = 2 * (min_loss - sat_loss)
+    # Profile likelihood ratio statistic T = 2 * max(min_loss - sat_loss, 0)
     statistic = max(2.0 * (min_loss - sat_loss), 0.0)
 
-    # Asymptotic / empirical p-value computation (chi2 with 2 degrees of freedom for 2 constraints)
+    # Asymptotic / empirical p-value computation (chi2 with 2 degrees of freedom)
     p_val = float(1.0 - stats.chi2.cdf(statistic, df=2)) if not np.isnan(statistic) else 0.0
 
     model_valid = (statistic <= critical_value_threshold)

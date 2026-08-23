@@ -80,8 +80,13 @@ def run_session(
 
     eff_p = min(1.0, max(0.0, config.noise_parameter_p + extra_p))
 
+    bell_outcomes = []
+    raw_measurements = []
+    pauli_corrections = []
+
     for i in range(config.n_qubits):
         state_i = encode_eigenstate(keys[i], bases[i])
+
         bell_bits, bob_state = teleport(state_i, rng=rng, apply_correction=apply_correction)
         bell_outcomes.append(bell_bits)
         pauli_corrections.append(bell_bits)

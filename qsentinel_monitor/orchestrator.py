@@ -95,3 +95,27 @@ def analyze(transcript: SessionTranscript, protocol_decision: ProtocolDecision) 
     )
 
 
+@dataclass(frozen=True)
+class CalibrationInfo:
+    content_hash: str = "0000000000000000000000000000000000000000000000000000000000000000"
+    rejection_threshold: float = 3.841
+    s_sprt_threshold: float = 2.0
+    s_gate_threshold: float = 0.8
+    metadata: dict = None
+
+    def __post_init__(self):
+        if self.metadata is None:
+            object.__setattr__(self, "metadata", {})
+
+
+_calibration: Optional[CalibrationInfo] = None
+
+
+def get_calibration() -> CalibrationInfo:
+    global _calibration
+    if _calibration is None:
+        _calibration = CalibrationInfo()
+    return _calibration
+
+
+

@@ -29,6 +29,11 @@ class MonitoringDecision:
     advisory: bool
     stage1_passed: bool
     details: str
+    stage2_passed: bool = True
+    fsm_passed: bool = True
+    cusum_value: float = 0.0
+    drift_detected: bool = False
+
 
 
 def analyze_session(
@@ -86,13 +91,19 @@ def analyze(transcript: SessionTranscript, protocol_decision: ProtocolDecision) 
     else:
         verdict = "ACCEPT"
     
+    stage2_passed = verdict in ("ACCEPT", "FLAG_INVESTIGATE")
     return MonitoringDecision(
         session_id=transcript.session_id,
         verdict=verdict,
         advisory=True,
         stage1_passed=res.stage1_result.passed,
+        stage2_passed=stage2_passed,
+        fsm_passed=True,
+        cusum_value=0.0,
+        drift_detected=False,
         details=res.stage1_result.details,
     )
+
 
 
 @dataclass(frozen=True)

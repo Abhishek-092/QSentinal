@@ -1,5 +1,5 @@
 import pytest
-import json
+json_import = pytest.importorskip("json")
 from qds.protocol import SessionConfig
 from experiments.seed_allocator import SeedAllocator, SeedAllocationError
 from experiments.calibration import generate_calibration_artifact, compute_canonical_hash
@@ -12,17 +12,22 @@ from qsentinel_monitor.calibration_loader import (
 
 
 def test_seed_separation_enforcement():
-    """Verify that calibration runner rejects VALIDATION, EVALUATION, or out-of-range seeds."""
+    """Verify that calibration runner rejects overflow seeds or inappropriate purpose queries."""
     with pytest.raises(SeedAllocationError):
         # 60000 trials exceeds max CALIBRATION range limit (50,000)
         generate_calibration_artifact(n_trials_per_grid_point=10000, p_grid=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
 
-    # Direct SeedAllocator checks
+    # Direct SeedAllocator checks for offset overflow
     with pytest.raises(SeedAllocationError):
-        SeedAllocator.get_seed("VALIDATION", 0)  # VALIDATION seed range [50000, 100000) not allowed for CALIBRATION
+        SeedAllocator.get_seed("CALIBRATION", 60_000)
+
+    # Validate that CALIBRATION seed cannot be validated as a VALIDATION or EVALUATION seed
+    calib_seed = SeedAllocator.get_seed("CALIBRATION", 10)
+    with pytest.raises(SeedAllocationError):
+        SeedAllocator.validate_seed("VALIDATION", calib_seed)
 
     with pytest.raises(SeedAllocationError):
-        SeedAllocator.get_seed("EVALUATION", 0)  # EVALUATION seed range [100000, 1000000) not allowed for CALIBRATION
+        SeedAllocator.validate_seed("EVALUATION", calib_seed)
 
 
 def test_calibration_reproducibility_and_hashing():
@@ -70,6 +75,7 @@ def test_artifact_tampering_detection():
     art = generate_calibration_artifact(n_trials_per_grid_point=20, p_grid=[0.0, 0.1])
 
     # Tamper with empirical critical value in table
+    import json
     art_tampered = json.loads(json.dumps(art))
     art_tampered["calibration_table"][1]["empirical_critical_value"] += 99.9
 

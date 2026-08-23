@@ -34,18 +34,15 @@ def _joint_negative_log_likelihood(p: float, m_obs: float, C_obs: float, H_obs: 
 
     # 2. Consistency of C_obs with predicted C(p) = 1 - 2p
     C_pred = 1.0 - 2.0 * p_clamped
-    # Variance of sample correlation estimator under n_sifted trials
     var_C = max(4.0 * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-5)
     nll_C = 0.5 * np.log(2.0 * np.pi * var_C) + 0.5 * ((C_obs - C_pred) ** 2) / var_C
 
     # 3. Consistency of H_obs with predicted H(p)
     H_pred = -p_clamped * np.log2(p_clamped) - (1.0 - p_clamped) * np.log2(1.0 - p_clamped)
-    # Variance of entropy estimator under delta method
     grad_H = np.log2((1.0 - p_clamped) / p_clamped) if 0.0 < p_clamped < 0.5 else 0.0
     var_H = max((grad_H ** 2) * p_clamped * (1.0 - p_clamped) / float(n_sifted), 1e-5)
     nll_H = 0.5 * np.log(2.0 * np.pi * var_H) + 0.5 * ((H_obs - H_pred) ** 2) / var_H
 
-    # Total joint NLL (jointly parameterized by p, NOT multiplied independent probabilities)
     return nll_m + nll_C + nll_H
 
 
@@ -65,17 +62,15 @@ def evaluate_stage1(
 
     # Numerical safeguards for 0 mismatch / perfect observations
     if m_obs <= 0.0:
-        # Check if C_obs or H_obs violate p=0 (C=1, H=0)
         c_inconsistent = abs(C_obs - 1.0) > 0.05
         h_inconsistent = abs(H_obs - 0.0) > 0.05
         if c_inconsistent or h_inconsistent:
-            stat = 100.0
             return Stage1Result(
                 session_id=session_id,
                 status="MODEL_INVALID",
                 model_valid=False,
                 best_fit_p=0.0,
-                statistic=stat,
+                statistic=100.0,
                 p_value=0.0,
                 optimization_success=True,
                 diagnostic_info={"note": "Zero mismatch but C/H violate p=0 expectation"},
@@ -125,9 +120,7 @@ def evaluate_stage1(
 
     best_fit_p = float(res.x)
 
-    # Unconstrained saturated model: each metric fits its own implied p
-    # p_m = m_obs, p_C = (1 - C_obs)/2, p_H = inverse_H(H_obs)
-    # The discrepancy between best_fit_p NLL and saturated model NLL yields profile statistic T
+    # Saturated model NLL
     p_C_implied = np.clip((1.0 - C_obs) / 2.0, 1e-6, 0.5 - 1e-6)
     sat_nll_m = -(m_obs * n_sifted * np.log(np.clip(m_obs, 1e-6, 0.5)) + (n_sifted - m_obs * n_sifted) * np.log(1.0 - np.clip(m_obs, 1e-6, 0.5)))
     sat_nll_C = 0.5 * np.log(2.0 * np.pi * max(4.0 * p_C_implied * (1.0 - p_C_implied) / float(n_sifted), 1e-5))
@@ -136,13 +129,10 @@ def evaluate_stage1(
 
     min_loss = float(res.fun)
 
-    # Profile likelihood ratio statistic T = 2 * max(min_loss - sat_loss, 0)
-    statistic = max(2.0 * (min_loss - sat_loss), 0.0)
-
-    # Asymptotic / empirical p-value computation (chi2 with 2 degrees of freedom)
+    statistic = float(max(2.0 * (min_loss - sat_loss), 0.0))
     p_val = float(1.0 - stats.chi2.cdf(statistic, df=2)) if not np.isnan(statistic) else 0.0
 
-    model_valid = (statistic <= critical_value_threshold)
+    model_valid = bool(statistic <= critical_value_threshold)
     status = "MODEL_VALID" if model_valid else "MODEL_INVALID"
 
     diagnostic_info = {

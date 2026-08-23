@@ -60,19 +60,36 @@ def run_session(
     bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
     recipient_bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
 
-    bell_outcomes = []
-    raw_measurements = []
-    pauli_corrections = []
+    extra_p = 0.0
+    apply_correction = True
+
+    if attack == "impersonation":
+        pass
+    elif attack == "clean_forgery":
+        pass
+    elif attack == "sub_threshold_forgery":
+        extra_p = 0.03
+    elif attack == "unauthorized_verification":
+        apply_correction = False
+    elif attack == "channel_manipulation":
+        extra_p = 0.20
+    elif attack == "low_and_slow_drift":
+        extra_p = 0.025
+    elif attack in ("intercept_resend", "basis_spoof", "entanglement_probe"):
+        extra_p = 0.15
+
+    eff_p = min(1.0, max(0.0, config.noise_parameter_p + extra_p))
 
     for i in range(config.n_qubits):
         state_i = encode_eigenstate(keys[i], bases[i])
-        bell_bits, bob_state = teleport(state_i, rng=rng)
+        bell_bits, bob_state = teleport(state_i, rng=rng, apply_correction=apply_correction)
         bell_outcomes.append(bell_bits)
         pauli_corrections.append(bell_bits)
 
-        noisy_bob_state = depolarize(bob_state, p=config.noise_parameter_p, rng=rng)
+        noisy_bob_state = depolarize(bob_state, p=eff_p, rng=rng)
         meas_bit = project_measurement(noisy_bob_state, basis=recipient_bases[i], rng=rng)
         raw_measurements.append(meas_bit)
+
 
     # BB84 sifting: match where sender basis == recipient basis
     sifted_indices = [i for i in range(config.n_qubits) if bases[i] == recipient_bases[i]]

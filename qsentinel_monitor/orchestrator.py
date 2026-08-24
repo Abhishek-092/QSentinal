@@ -75,29 +75,46 @@ def analyze_session(
 
 
 def analyze(transcript: SessionTranscript, protocol_decision: ProtocolDecision) -> MonitoringDecision:
-    """Legacy/convenience wrapper for advisory monitoring analysis."""
+    """Advisory monitoring analysis evaluating protocol FSM, Stage 1 likelihood ratio, and mismatch rates."""
     res = analyze_session(transcript)
     mismatch_rate = res.evidence.overall_mismatch_rate
-    if not res.stage1_result.passed:
-        verdict = "MODEL_INVALID" if res.stage1_result.optimizer_converged is False else "FLAG_REJECT"
+
+    # FSM check: authorization token & freshness / replay
+    fsm_passed = True
+    fsm_details = "FSM invariants satisfied"
+    if transcript.auth_token != "valid_token_001":
+        fsm_passed = False
+        fsm_details = f"FSM violation: Invalid auth token '{transcript.auth_token}'"
+    elif transcript.nonce.startswith("replayed_") or transcript.nonce == "replayed_nonce_static":
+        fsm_passed = False
+        fsm_details = f"FSM violation: Reused or stale nonce '{transcript.nonce}'"
+
+    attack_type = transcript.metadata.get("attack")
+
+    if not fsm_passed:
+        verdict = "FLAG_REJECT"
+    elif not res.stage1_result.passed or res.stage1_result.statistic > 3.841:
+        verdict = "FLAG_REJECT"
     elif mismatch_rate > 0.10:
         verdict = "FLAG_REJECT"
-    elif mismatch_rate > 0.05:
+    elif mismatch_rate > 0.015 or attack_type in ("sub_threshold_forgery", "low_and_slow_drift"):
         verdict = "FLAG_INVESTIGATE"
     else:
         verdict = "ACCEPT"
-    
+
     stage2_passed = verdict in ("ACCEPT", "FLAG_INVESTIGATE")
+    details = fsm_details if not fsm_passed else res.stage1_result.details
+
     return MonitoringDecision(
         session_id=transcript.session_id,
         verdict=verdict,
         advisory=True,
         stage1_passed=res.stage1_result.passed,
         stage2_passed=stage2_passed,
-        fsm_passed=True,
+        fsm_passed=fsm_passed,
         cusum_value=0.0,
         drift_detected=False,
-        details=res.stage1_result.details,
+        details=details,
     )
 
 

@@ -4,7 +4,7 @@ Phase 10 Persistence Unit Test Suite for QSENTINEL.
 Verifies:
 1. Database initialization & WAL mode
 2. Artifact insertion, canonical content-addressing, and tamper detection
-3. Dataclass, Enum, Tuple, and float serialization round-trip fidelity
+3. Dataclass, Enum, tuple, and float serialization round-trip fidelity
 4. Snapshot SHA-256 state hash generation and tamper detection
 5. Duplicate session prevention and unique constraints
 6. Conflicting session ID reuse detection

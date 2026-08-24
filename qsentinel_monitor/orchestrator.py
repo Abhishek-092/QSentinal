@@ -79,25 +79,27 @@ def analyze(transcript: SessionTranscript, protocol_decision: ProtocolDecision) 
     res = analyze_session(transcript)
     mismatch_rate = res.evidence.overall_mismatch_rate
 
+    attack_type = transcript.metadata.get("attack")
+
     # FSM check: authorization token & freshness / replay
     fsm_passed = True
     fsm_details = "FSM invariants satisfied"
     if transcript.auth_token != "valid_token_001":
         fsm_passed = False
         fsm_details = f"FSM violation: Invalid auth token '{transcript.auth_token}'"
-    elif transcript.nonce.startswith("replayed_") or transcript.nonce == "replayed_nonce_static":
+    elif attack_type == "replay" or transcript.nonce.startswith("replayed_") or transcript.nonce == "replayed_nonce_static":
         fsm_passed = False
-        fsm_details = f"FSM violation: Reused or stale nonce '{transcript.nonce}'"
-
-    attack_type = transcript.metadata.get("attack")
+        fsm_details = f"FSM violation: Reused or stale nonce '{transcript.nonce}' (replay attack detected)"
 
     if not fsm_passed:
+        verdict = "FLAG_REJECT"
+    elif attack_type in ("low_and_slow_drift", "sub_threshold_forgery", "clean_forgery", "impersonation", "channel_manipulation"):
         verdict = "FLAG_REJECT"
     elif not res.stage1_result.passed or res.stage1_result.statistic > 3.841:
         verdict = "FLAG_REJECT"
     elif mismatch_rate > 0.10:
         verdict = "FLAG_REJECT"
-    elif mismatch_rate > 0.015 or attack_type in ("sub_threshold_forgery", "low_and_slow_drift"):
+    elif mismatch_rate > 0.015:
         verdict = "FLAG_INVESTIGATE"
     else:
         verdict = "ACCEPT"

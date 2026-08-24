@@ -64,14 +64,20 @@ def _recover_torn_write(lines: list[str]) -> str:
     return "0" * 64
 
 
+import threading
+
+_LOG_LOCK = threading.Lock()
+
+
 def append_log_entry(
     protocol_decision: Any,
     monitoring_decision: Any,
     telemetry: dict[str, Any],
 ) -> dict[str, Any]:
     """Append a tamper-proof hash-chained log entry."""
-    key = _ensure_key()
-    prev_hash = _last_entry_hash()
+    with _LOG_LOCK:
+        key = _ensure_key()
+        prev_hash = _last_entry_hash()
 
     payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),

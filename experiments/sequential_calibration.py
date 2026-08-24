@@ -6,7 +6,7 @@ under honest-null execution using CALIBRATION seeds.
 Produces versioned, SHA-256 content-hashed sequential calibration artifacts.
 """
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+from typing import Any
 import json
 import numpy as np
 
@@ -32,7 +32,7 @@ def build_sequential_canonical_payload(
     seed_start: int,
     seed_count: int,
     empirical_sequential_threshold: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Constructs deterministic canonical payload for sequential calibration artifact.
     Contains zero wall-clock timestamps or nondeterministic metadata.
@@ -76,13 +76,13 @@ def generate_sequential_calibration_artifact(
     alpha_seq: float = 0.01,
     n_trials: int = 2000,
     seed_start: int = 10000,  # Offset within CALIBRATION range [0, 50_000)
-    honest_p_list: Optional[List[float]] = None,
+    honest_p_list: list[float | None] = None,
     tolerance: float = 0.05,
     schema_version: str = "1.0",
     architecture_version: str = "v5.0",
     stage1_model_version: str = "v1.0",
     sequential_model_version: str = "v1.0",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes offline Monte Carlo simulation of M_K = max_{1..K} E_k under honest null execution.
     Enforces CALIBRATION seed capacity and produces content-hashed sequential calibration artifact.
@@ -100,7 +100,7 @@ def generate_sequential_calibration_artifact(
         table_p = [float(entry["p"]) for entry in stage1_artifact.calibration_table if float(entry["p"]) > 0.0]
         honest_p_list = table_p if table_p else [0.10]
 
-    max_E_list: List[float] = []
+    max_E_list: list[float] = []
 
     for trial_idx in range(n_trials):
         seq_state = create_initial_sequential_state()

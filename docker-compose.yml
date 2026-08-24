@@ -1,0 +1,17 @@
+# QSENTINEL — Single-command demo deployment
+# Blueprint §22: API + static frontend, SQLite volume-mounted
+version: "3.8"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./db:/app/db
+      - ./forensic_store:/app/forensic_store
+      - ./artifacts:/app/artifacts
+    environment:
+      - QSENTINEL_DB_PATH=/app/db/qsentinel.db
+      - QSENTINEL_FORENSIC_DIR=/app/forensic_store
+    restart: unless-stopped

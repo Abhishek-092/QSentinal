@@ -3,7 +3,7 @@ QSENTINEL Threat Orchestrator.
 Connects immutable SessionTranscript & ProtocolDecision -> Evidence Collection -> Stage 1 -> Optional Calibrated Decision.
 Guarantees absolute non-interference: Monitoring output is strictly advisory and NEVER mutates ProtocolDecision.
 """
-from typing import Optional
+
 from qds.transcript import SessionTranscript, ProtocolDecision
 from qsentinel_monitor.quantum_evidence.collector import extract_evidence
 from qsentinel_monitor.quantum_evidence.stage1 import evaluate_stage1
@@ -38,10 +38,10 @@ class MonitoringDecision:
 
 def analyze_session(
     transcript: SessionTranscript,
-    calibration_artifact: Optional[CalibrationArtifact] = None,
-    stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-    changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
-    previous_unified_state: Optional[UnifiedMonitoringState] = None,
+    calibration_artifact: CalibrationArtifact | None = None,
+    stage2_artifact: Stage2CalibrationArtifact | None = None,
+    changepoint_artifact: ChangePointCalibrationArtifact | None = None,
+    previous_unified_state: UnifiedMonitoringState | None = None,
     calibration_p: float = 0.02,
 ) -> MonitoringResult:
     """
@@ -53,18 +53,14 @@ def analyze_session(
       and optional calibrated_decision.
     - Never alters ProtocolDecision.accepted or ProtocolDecision.reason.
     """
-    # 1. Extract quantum evidence telemetry
     evidence: QuantumEvidence = extract_evidence(transcript)
 
-    # 2. Evaluate Stage 1 profile-likelihood mutual consistency
     stage1_res: Stage1Result = evaluate_stage1(evidence)
 
-    # 3. Optional calibrated decision evaluation via dependency injection
-    calibrated_dec: Optional[CalibratedStage1Decision] = None
+    calibrated_dec: CalibratedStage1Decision | None = None
     if calibration_artifact is not None:
         calibrated_dec = evaluate_calibrated_stage1(stage1_res, calibration_artifact)
 
-    # 4. Advisory monitoring status (Non-final / advisory)
     monitoring_status = "MONITORED_ADVISORY"
 
     return MonitoringResult(
@@ -112,14 +108,14 @@ class CalibrationInfo:
     rejection_threshold: float = 3.841
     s_sprt_threshold: float = 2.0
     s_gate_threshold: float = 0.8
-    metadata: dict = None
+    metadata: dict | None = None
 
     def __post_init__(self):
         if self.metadata is None:
             object.__setattr__(self, "metadata", {})
 
 
-_calibration: Optional[CalibrationInfo] = None
+_calibration: CalibrationInfo | None = None
 
 
 def get_calibration() -> CalibrationInfo:

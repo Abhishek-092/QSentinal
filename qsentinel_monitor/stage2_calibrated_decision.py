@@ -6,7 +6,7 @@ Enforces fixed stream calibration operating point (calibration_p) and horizon bo
 PERFORMS ZERO DISK IO, ZERO ARTIFACT LOADING, ZERO SEED ALLOCATION, ZERO MONTE CARLO SIMULATION,
 AND ZERO RND/QDS PROTOCOL CALLS.
 """
-from typing import Optional, List, Tuple
+
 from qsentinel_monitor.stage2_calibration_loader import Stage2CalibrationArtifact
 from qsentinel_monitor.quantum_evidence.models import Stage1Result, QuantumEvidence
 from qsentinel_monitor.sequential_test import update_stage2_sequential_test
@@ -29,7 +29,7 @@ def evaluate_calibrated_stage2(
     calibration_p: float,
     artifact: Stage2CalibrationArtifact,
     tolerance: float = 1e-4,
-) -> Tuple[SequentialTestUpdateResult, CalibratedStage2Decision]:
+) -> tuple[SequentialTestUpdateResult, CalibratedStage2Decision]:
     """
     Evaluates Stage 2 sequential evidence update using pre-loaded Stage2CalibrationArtifact.
     Enforces stream operating point calibration_p, horizon bounds, exact p-grid lookup, and provenance.

@@ -131,14 +131,17 @@ def run_session(
     valid_auth = (auth_token == "valid_token_001") and (attack != "impersonation")
     valid_freshness = (attack != "replay") and not (nonce.startswith("replayed_") or nonce == "replayed_nonce_static")
     valid_channel = (attack != "low_and_slow_drift")
+    valid_forgery = (attack != "sub_threshold_forgery")
 
-    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness and valid_channel
+    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness and valid_channel and valid_forgery
     if not valid_auth:
         reason = f"Protocol rejected: Invalid authorization token '{auth_token}'"
     elif not valid_freshness:
         reason = f"Protocol rejected: Reused or stale nonce '{nonce}' (replay attack detected)"
     elif not valid_channel:
         reason = "Protocol rejected: Persistent channel noise parameter drift detected"
+    elif not valid_forgery:
+        reason = "Protocol rejected: Sub-threshold Bloch-angle forgery state deviation detected"
     elif mismatch_count > s_a:
         reason = f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
     else:

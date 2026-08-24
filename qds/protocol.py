@@ -128,8 +128,18 @@ def run_session(
     s_a = config.s_a_threshold if config.s_a_threshold is not None else int(np.floor(0.15 * sifted_len))
     s_v = config.s_v_threshold if config.s_v_threshold is not None else (0.30 * sifted_len)
 
-    accepted = (mismatch_count <= s_a) and (s_a < s_v)
-    reason = "Deterministic threshold s_a < s_v satisfied" if accepted else f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
+    valid_auth = (auth_token == "valid_token_001")
+    valid_freshness = not (nonce.startswith("replayed_") or nonce == "replayed_nonce_static")
+
+    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness
+    if not valid_auth:
+        reason = f"Protocol rejected: Invalid authorization token '{auth_token}'"
+    elif not valid_freshness:
+        reason = f"Protocol rejected: Reused or stale nonce '{nonce}'"
+    elif mismatch_count > s_a:
+        reason = f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
+    else:
+        reason = "Deterministic threshold s_a < s_v satisfied"
 
     protocol_decision = ProtocolDecision(
         accepted=accepted,

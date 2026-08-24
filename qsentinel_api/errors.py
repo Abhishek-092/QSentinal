@@ -1,5 +1,5 @@
 """
-Phase 11 Centralized Domain-to-HTTP Exception Mapping for QSENTINEL.
+Centralized Domain-to-HTTP Exception Mapping for QSENTINEL.
 
 Maps domain exceptions (ConflictingSessionIdError, CryptographicIntegrityError, EpochClosedError, etc.)
 to structured JSON responses with explicit HTTP status codes.

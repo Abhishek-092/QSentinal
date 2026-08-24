@@ -1,5 +1,5 @@
 """
-Phase 10 Persistence Package Initialization.
+Persistence Package Initialization.
 """
 from qsentinel_monitor.persistence.database import init_database, get_connection, transaction_scope
 from qsentinel_monitor.persistence.models import (

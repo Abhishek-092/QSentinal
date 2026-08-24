@@ -8,7 +8,7 @@ Uses deterministic STREAM seed allocation and SHA-256 canonical hashing.
 PERFORMS ZERO DISK MUTATION AT RUNTIME.
 """
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+from typing import Any
 import json
 import hashlib
 import numpy as np
@@ -49,11 +49,11 @@ def build_stage2_canonical_payload(
     alpha: float,
     horizon_sessions: int,
     n_trials_per_grid_point: int,
-    p_grid: List[float],
+    p_grid: list[float],
     seed_start: int,
     seed_count: int,
-    table_entries: List[Stage2CalibrationTableEntry],
-) -> Dict[str, Any]:
+    table_entries: list[Stage2CalibrationTableEntry],
+) -> dict[str, Any]:
     """
     Constructs deterministic canonical Stage 2 payload dictionary without wall-clock timestamps or UUIDs.
     """
@@ -85,7 +85,7 @@ def build_stage2_canonical_payload(
     }
 
 
-def compute_stage2_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
+def compute_stage2_canonical_hash(canonical_payload: dict[str, Any]) -> str:
     """
     Computes SHA-256 content hash from canonical JSON string (sorted keys, indent 2, ascii).
     """
@@ -94,7 +94,7 @@ def compute_stage2_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
 
 
 def generate_stage2_calibration_artifact(
-    p_grid: List[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+    p_grid: list[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
     n_qubits: int = 200,
     alpha: float = 0.01,
     horizon_sessions: int = 50,
@@ -103,7 +103,7 @@ def generate_stage2_calibration_artifact(
     schema_version: str = "1.0",
     architecture_version: str = "v6.0",
     stage2_model_version: str = "v1.0",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes offline conditional Stage 2 sequential calibration across p_grid using STREAM CALIBRATION seeds.
     Enforces stream capacity bounds (N_grid * N_trials <= 50,000) and deep immutability provenance.
@@ -116,12 +116,12 @@ def generate_stage2_calibration_artifact(
             f"Requested {total_stream_seeds_required} stream seeds starting from {seed_start} exceeds CALIBRATION range limit (50000)."
         )
 
-    table_entries: List[Stage2CalibrationTableEntry] = []
+    table_entries: list[Stage2CalibrationTableEntry] = []
 
     for g_idx, p_val in enumerate(p_grid):
         p_val_rounded = float(round(p_val, 4))
         
-        M_H_trial_values: List[float] = []
+        M_H_trial_values: list[float] = []
 
         for t_idx in range(n_trials_per_grid_point):
             offset = g_idx * n_trials_per_grid_point + t_idx

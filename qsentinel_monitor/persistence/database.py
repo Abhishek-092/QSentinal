@@ -7,7 +7,7 @@ schema migrations, and explicit transactional boundaries.
 import sqlite3
 import os
 from contextlib import contextmanager
-from typing import Generator, Optional
+from typing import Generator
 
 
 SCHEMA_SQL = """

@@ -6,7 +6,7 @@ aggregated threat metrics, and reproducible EvaluationReport objects.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, Dict, Any
+from typing import Any
 from experiments.attack_scenarios import AttackScenario, AttackType
 
 
@@ -41,12 +41,12 @@ class AttackTrialResult:
     trial_id: str
     scenario_id: str
     classification: TrialClassification
-    first_detection_sequence: Optional[int]
-    detection_latency: Optional[int]
+    first_detection_sequence: int | None
+    detection_latency: int | None
     processed_sessions: int
     final_cumulative_glr: float
     stream_seed: int
-    session_ground_truths: Tuple[SessionGroundTruth, ...]
+    session_ground_truths: tuple[SessionGroundTruth, ...]
 
 
 @dataclass(frozen=True)
@@ -61,13 +61,13 @@ class DetectionMetrics:
     false_negatives: int
     false_positives: int
     pre_attack_false_alarms: int
-    tpr: Optional[float]
-    fpr: Optional[float]
-    fnr: Optional[float]
-    tpr_ci_95: Tuple[Optional[float], Optional[float]]
-    fpr_ci_95: Tuple[Optional[float], Optional[float]]
-    mean_latency: Optional[float]
-    median_latency: Optional[float]
+    tpr: float | None
+    fpr: float | None
+    fnr: float | None
+    tpr_ci_95: tuple[float | None, float | None]
+    fpr_ci_95: tuple[float | None, float | None]
+    mean_latency: float | None
+    median_latency: float | None
     horizon_exceeded_count: int
     unavailable_count: int
 
@@ -79,10 +79,10 @@ class EvaluationReport:
     aggregated detection metrics, trial results, and artifact provenances.
     """
     evaluation_mode: str
-    scenarios: Tuple[AttackScenario, ...]
+    scenarios: tuple[AttackScenario, ...]
     metrics: DetectionMetrics
-    trial_results: Tuple[AttackTrialResult, ...]
-    stage1_artifact_provenance: Dict[str, Any]
-    stage2_artifact_provenance: Dict[str, Any]
-    seed_provenance: Dict[str, Any]
+    trial_results: tuple[AttackTrialResult, ...]
+    stage1_artifact_provenance: dict[str, Any]
+    stage2_artifact_provenance: dict[str, Any]
+    seed_provenance: dict[str, Any]
     statistical_limitation_notice: str

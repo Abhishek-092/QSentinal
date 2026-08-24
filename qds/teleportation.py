@@ -2,28 +2,33 @@
 3-Qubit quantum teleportation execution module.
 State register: |ψ⟩_message ⊗ |Φ+⟩_bell (3 qubits total, dimension 8)
 """
-from typing import Tuple
+
 import numpy as np
 from qds.bell_pair import prepare_bell_pair, tensor_product, KET_0, KET_1, GATE_H
 from qds.pauli import correct_pauli
 
 
-def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tuple[Tuple[int, int], np.ndarray]:
+def teleport(
+    message_state: np.ndarray,
+    rng: np.random.Generator = None,
+    apply_correction: bool = True,
+) -> tuple[tuple[int, int], np.ndarray]:
     """
     Executes quantum teleportation of message_state (1 qubit) using a Bell pair.
     Returns:
         ((b1, b2), teleported_bob_state)
-    where (b1, b2) are Alice's 2-bit Bell measurement outcomes and teleported_bob_state
-    is Bob's 1-qubit state post Pauli correction.
+    where (b1, b2) are sender's 2-bit Bell measurement outcomes and teleported_recipient_state
+    is recipient's 1-qubit state post Pauli correction.
     """
     if rng is None:
         rng = np.random.default_rng()
+
 
     bell_pair = prepare_bell_pair()
     # 3-qubit joint state: message ⊗ bell_pair (dim 8)
     psi_3q = tensor_product(message_state, bell_pair)
 
-    # 1. Apply CNOT between qubit 0 (message) and qubit 1 (Alice's Bell half)
+    # 1. Apply CNOT between qubit 0 (message) and qubit 1 (sender's Bell half)
     # CNOT on qubits (0, 1) in 3-qubit space
     cnot_3q = np.eye(8, dtype=np.complex128)
     # In binary basis |q0 q1 q2⟩: if q0 == 1, flip q1
@@ -67,10 +72,10 @@ def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tupl
     b0_outcome = (outcome_idx >> 1) & 1
     b1_outcome = outcome_idx & 1
 
-    # Extract Bob's post-measurement 1-qubit state
+    # Extract recipient's post-measurement 1-qubit state
     collapsed_3q = sub_states[outcome_idx] / np.sqrt(probs[outcome_idx])
     
-    # Extract Bob's qubit 2 statevector (dimension 2)
+    # Extract recipient's qubit 2 statevector (dimension 2)
     bob_state = np.zeros(2, dtype=np.complex128)
     for q2 in range(2):
         idx = (b0_outcome << 2) | (b1_outcome << 1) | q2
@@ -78,7 +83,11 @@ def teleport(message_state: np.ndarray, rng: np.random.Generator = None) -> Tupl
 
     bob_state /= np.linalg.norm(bob_state)
 
-    # 4. Apply Pauli corrections on Bob's qubit
-    corrected_bob_state = correct_pauli(bob_state, b0_outcome, b1_outcome)
+    # 4. Apply Pauli corrections on recipient's qubit
+    if apply_correction:
+        corrected_bob_state = correct_pauli(bob_state, b0_outcome, b1_outcome)
+    else:
+        corrected_bob_state = bob_state
 
     return (b0_outcome, b1_outcome), corrected_bob_state
+

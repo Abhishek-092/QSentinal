@@ -17,7 +17,7 @@ STRICT STATISTICAL INVARIANTS:
 import numpy as np
 import scipy.optimize as opt
 import scipy.stats as stats
-from typing import Dict, Any, Optional
+from typing import Any
 
 from qsentinel_monitor.quantum_evidence.models import QuantumEvidence, Stage1Result
 

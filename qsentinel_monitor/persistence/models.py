@@ -2,7 +2,7 @@
 Phase 10 Persistence DTOs & Custom Integrity Exceptions for QSENTINEL.
 """
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Any
 
 
 class CryptographicIntegrityError(Exception):
@@ -44,10 +44,10 @@ class EpochRecord:
     stream_id: str
     epoch_index: int
     status: str
-    termination_reason: Optional[str]
-    stage1_artifact_hash: Optional[str]
-    stage2_artifact_hash: Optional[str]
-    changepoint_artifact_hash: Optional[str]
+    termination_reason: str | None
+    stage1_artifact_hash: str | None
+    stage2_artifact_hash: str | None
+    changepoint_artifact_hash: str | None
     calibration_context_json: str
     created_at: str
-    closed_at: Optional[str]
+    closed_at: str | None

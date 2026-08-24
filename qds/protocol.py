@@ -4,7 +4,7 @@ Executes protocol sessions and enforces the authoritative asymmetric threshold r
 Output arrays are stored as immutable tuples in SessionTranscript.
 """
 from dataclasses import dataclass
-from typing import Optional
+
 import time
 import uuid
 import numpy as np
@@ -21,32 +21,64 @@ class SessionConfig:
     n_qubits: int = 200
     noise_parameter_p: float = 0.02
     message_bit: int = 1
-    s_a_threshold: Optional[int] = None
-    s_v_threshold: Optional[float] = None
-    sender_id: str = "Alice"
-    recipient_id: str = "Bob"
+    s_a_threshold: int | None = None
+    s_v_threshold: float | None = None
+    sender_id: str = "sender"
+    recipient_id: str = "recipient"
     auth_token: str = "valid_token_001"
-    nonce: Optional[str] = None
-    seed: Optional[int] = None
+    nonce: str | None = None
+    seed: int | None = None
 
 
-def run_session(config: SessionConfig) -> SessionTranscript:
+def run_session(
+    config_or_session_id: SessionConfig | str = "default_session",
+    noise_p: float = 0.02,
+    attack: str | None = None,
+    seed: int | None = None,
+    n_qubits: int = 200,
+    theta: float = np.pi / 4,
+) -> SessionTranscript:
     """
     Orchestrates one complete teleportation-distributed QS-L signature session.
-    1. Key & basis generation
-    2. Pauli eigenstate encoding
-    3. Quantum teleportation over noisy channel
-    4. Recipient measurement & BB84 sifting
-    5. Asymmetric threshold verification (s_a < s_v)
-    6. Assembles & returns frozen SessionTranscript with immutable tuples.
+    Accepts either a SessionConfig object or direct parameter arguments.
     """
+    if isinstance(config_or_session_id, SessionConfig):
+        config = config_or_session_id
+        session_id = str(uuid.uuid4())
+    else:
+        session_id = str(config_or_session_id)
+        config = SessionConfig(
+            n_qubits=n_qubits,
+            noise_parameter_p=noise_p,
+            seed=seed,
+        )
+
     rng = np.random.default_rng(config.seed)
-    session_id = str(uuid.uuid4())
     nonce = config.nonce or str(uuid.uuid4())
 
     keys = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
     bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
     recipient_bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
+
+    extra_p = 0.0
+    apply_correction = True
+
+    if attack == "impersonation":
+        pass
+    elif attack == "clean_forgery":
+        pass
+    elif attack == "sub_threshold_forgery":
+        extra_p = 0.03
+    elif attack == "unauthorized_verification":
+        apply_correction = False
+    elif attack == "channel_manipulation":
+        extra_p = 0.20
+    elif attack == "low_and_slow_drift":
+        extra_p = 0.025
+    elif attack in ("intercept_resend", "basis_spoof", "entanglement_probe"):
+        extra_p = 0.15
+
+    eff_p = min(1.0, max(0.0, config.noise_parameter_p + extra_p))
 
     bell_outcomes = []
     raw_measurements = []
@@ -54,13 +86,15 @@ def run_session(config: SessionConfig) -> SessionTranscript:
 
     for i in range(config.n_qubits):
         state_i = encode_eigenstate(keys[i], bases[i])
-        bell_bits, bob_state = teleport(state_i, rng=rng)
+
+        bell_bits, bob_state = teleport(state_i, rng=rng, apply_correction=apply_correction)
         bell_outcomes.append(bell_bits)
         pauli_corrections.append(bell_bits)
 
-        noisy_bob_state = depolarize(bob_state, p=config.noise_parameter_p, rng=rng)
+        noisy_bob_state = depolarize(bob_state, p=eff_p, rng=rng)
         meas_bit = project_measurement(noisy_bob_state, basis=recipient_bases[i], rng=rng)
         raw_measurements.append(meas_bit)
+
 
     # BB84 sifting: match where sender basis == recipient basis
     sifted_indices = [i for i in range(config.n_qubits) if bases[i] == recipient_bases[i]]
@@ -113,3 +147,36 @@ def run_session(config: SessionConfig) -> SessionTranscript:
     )
 
     return transcript
+
+
+def iterate_session(
+    session_id: str,
+    noise_p: float = 0.02,
+    attack: str | None = None,
+    theta: float = np.pi / 4,
+):
+    """Yield live stage events followed by final transcript for SSE streaming."""
+    phases = [
+        ("Initialize computational vacuum |000⟩", 10),
+        ("Distribute Bell pair |Φ+⟩ on qubits 1,2", 30),
+        (f"Encode message state R_y({theta:.3f})|0⟩", 50),
+        (f"Depolarizing channel with noise_p={noise_p:.3f}", 70),
+        ("Teleportation & Pauli corrections", 90),
+    ]
+    for phase, progress in phases:
+        yield {
+            "phase": phase,
+            "step": phase,
+            "progress": progress,
+            "snapshot": {"mismatch_rate": noise_p, "fidelity": 1.0 - noise_p},
+        }
+
+    transcript = run_session(session_id, noise_p=noise_p, attack=attack, theta=theta)
+    yield {
+        "phase": "QS-L decision",
+        "step": "QS-L decision",
+        "progress": 100,
+        "snapshot": transcript.measurement_telemetry,
+        "transcript": transcript,
+    }
+

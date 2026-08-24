@@ -7,7 +7,7 @@ All domain objects are deeply immutable dataclasses using frozen tuples.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, Dict, Any
+from typing import Any
 from qsentinel_monitor.quantum_evidence.models import Stage1Result, QuantumEvidence
 
 
@@ -69,12 +69,12 @@ class SequentialTestState:
     cumulative_log_likelihood_ratio: float
     processed_valid_count: int
     skipped_session_count: int
-    last_accepted_session_id: Optional[str]
+    last_accepted_session_id: str | None
     last_accepted_sequence_number: int
-    provenance_identity: Optional[Stage2ProvenanceIdentity]
+    provenance_identity: Stage2ProvenanceIdentity | None
     decision_status: Stage2DecisionStatus
-    history_session_ids: Tuple[str, ...]
-    calibration_context: Optional[StreamCalibrationContext] = None
+    history_session_ids: tuple[str, ...]
+    calibration_context: StreamCalibrationContext | None = None
 
 
 @dataclass(frozen=True)
@@ -88,7 +88,7 @@ class SequentialTestUpdateResult:
     session_id: str
     sequence_number: int
     session_log_likelihood_ratio: float
-    applied_threshold: Optional[float]
+    applied_threshold: float | None
     diagnostic_reason: str
 
 
@@ -103,8 +103,8 @@ class CalibratedStage2Decision:
     cumulative_log_likelihood_ratio: float
     processed_valid_count: int
     calibration_p: float
-    matched_calibration_p: Optional[float]
-    empirical_critical_value: Optional[float]
+    matched_calibration_p: float | None
+    empirical_critical_value: float | None
     horizon_sessions: int
     decision_status: Stage2DecisionStatus
     outcome: Stage2ProcessingOutcome

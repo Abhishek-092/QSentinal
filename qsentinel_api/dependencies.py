@@ -1,8 +1,8 @@
 """
-Phase 11 FastAPI Configuration & Dependencies for QSENTINEL.
+FastAPI Configuration & Dependencies for QSENTINEL.
 """
 import os
-from typing import Optional, Generator
+from typing import Generator
 from fastapi import Request, Depends
 
 
@@ -10,7 +10,7 @@ DEFAULT_DB_PATH = os.path.join(os.getcwd(), "data", "qsentinel_production.db")
 
 
 class APISettings:
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or os.environ.get("QSENTINEL_DB_PATH", DEFAULT_DB_PATH)
 
 

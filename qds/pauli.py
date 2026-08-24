@@ -21,7 +21,7 @@ def encode_eigenstate(bit: int, basis: int) -> np.ndarray:
 
 def correct_pauli(state: np.ndarray, b1: int, b2: int) -> np.ndarray:
     """
-    Applies Pauli correction matrix on 1-qubit Bob state given Alice's Bell measurement bits (b1, b2):
+    Applies Pauli correction matrix on 1-qubit recipient state given sender's Bell measurement bits (b1, b2):
     - 00: I
     - 01: X
     - 10: Z

@@ -11,7 +11,7 @@ Provides clean repository pattern abstractions over SQLite tables for:
 """
 import json
 import sqlite3
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 
 from qsentinel_monitor.persistence.database import get_connection, transaction_scope
 from qsentinel_monitor.persistence.models import (
@@ -38,7 +38,7 @@ class ArtifactRepository:
     """Repository for storing and retrieving content-addressed calibration artifacts."""
 
     @staticmethod
-    def save_artifact(db_path: str, artifact_type: str, artifact_payload: Dict[str, Any]) -> str:
+    def save_artifact(db_path: str, artifact_type: str, artifact_payload: dict[str, Any]) -> str:
         """Stores artifact payload and returns its verified content hash."""
         payload_copy = dict(artifact_payload)
         content_hash = payload_copy.pop("content_hash", None)
@@ -68,7 +68,7 @@ class ArtifactRepository:
         return content_hash
 
     @staticmethod
-    def get_artifact(db_path: str, content_hash: str) -> Optional[Dict[str, Any]]:
+    def get_artifact(db_path: str, content_hash: str) -> dict[str, Any | None]:
         """Retrieves and cryptographically verifies a stored artifact payload."""
         conn = get_connection(db_path)
         try:
@@ -106,7 +106,7 @@ class StreamRepository:
         return StreamRepository.get_stream(db_path, stream_id)
 
     @staticmethod
-    def get_stream(db_path: str, stream_id: str) -> Optional[StreamRecord]:
+    def get_stream(db_path: str, stream_id: str) -> StreamRecord | None:
         conn = get_connection(db_path)
         try:
             row = conn.execute(
@@ -134,10 +134,10 @@ class EpochRepository:
         epoch_id: str,
         stream_id: str,
         epoch_index: int,
-        calibration_context: Dict[str, Any],
-        stage1_artifact_hash: Optional[str] = None,
-        stage2_artifact_hash: Optional[str] = None,
-        changepoint_artifact_hash: Optional[str] = None,
+        calibration_context: dict[str, Any],
+        stage1_artifact_hash: str | None = None,
+        stage2_artifact_hash: str | None = None,
+        changepoint_artifact_hash: str | None = None,
     ) -> EpochRecord:
         context_json = canonical_json_dumps(calibration_context)
         with transaction_scope(db_path) as conn:
@@ -160,7 +160,7 @@ class EpochRepository:
         return EpochRepository.get_epoch(db_path, epoch_id)
 
     @staticmethod
-    def get_epoch(db_path: str, epoch_id: str) -> Optional[EpochRecord]:
+    def get_epoch(db_path: str, epoch_id: str) -> EpochRecord | None:
         conn = get_connection(db_path)
         try:
             row = conn.execute(
@@ -185,7 +185,7 @@ class EpochRepository:
             conn.close()
 
     @staticmethod
-    def get_latest_epoch(db_path: str, stream_id: str) -> Optional[EpochRecord]:
+    def get_latest_epoch(db_path: str, stream_id: str) -> EpochRecord | None:
         conn = get_connection(db_path)
         try:
             row = conn.execute(
@@ -212,7 +212,7 @@ class EpochRepository:
 
     @staticmethod
     def update_epoch_status(
-        db_path: str, epoch_id: str, status: str, termination_reason: Optional[str] = None
+        db_path: str, epoch_id: str, status: str, termination_reason: str | None = None
     ) -> None:
         with transaction_scope(db_path) as conn:
             conn.execute(
@@ -229,7 +229,7 @@ class SessionRepository:
     """Repository for append-only session ledger, detector snapshots, and threat assessments."""
 
     @staticmethod
-    def get_session_by_id(db_path: str, epoch_id: str, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_session_by_id(db_path: str, epoch_id: str, session_id: str) -> dict[str, Any | None]:
         conn = get_connection(db_path)
         try:
             row = conn.execute(
@@ -243,7 +243,7 @@ class SessionRepository:
             conn.close()
 
     @staticmethod
-    def get_latest_snapshot(db_path: str, epoch_id: str) -> Optional[Tuple[UnifiedMonitoringState, str]]:
+    def get_latest_snapshot(db_path: str, epoch_id: str) -> tuple[UnifiedMonitoringState, str | None]:
         """
         Loads and cryptographically verifies the latest detector state snapshot for an epoch.
         Returns tuple of (UnifiedMonitoringState, snapshot_hash).
@@ -276,7 +276,7 @@ class SessionRepository:
             conn.close()
 
     @staticmethod
-    def get_threat_assessment(db_path: str, epoch_id: str, session_id: str) -> Optional[UnifiedThreatAssessment]:
+    def get_threat_assessment(db_path: str, epoch_id: str, session_id: str) -> UnifiedThreatAssessment | None:
         conn = get_connection(db_path)
         try:
             row = conn.execute(

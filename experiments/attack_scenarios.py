@@ -7,7 +7,7 @@ PERFORMS ZERO MODIFICATION TO PRODUCTION QDS OR QSENTINEL MONITOR CODE.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, List, Tuple
+
 import hashlib
 import uuid
 import numpy as np
@@ -147,8 +147,8 @@ def run_experimental_session(
     return SessionTranscript(
         session_id=session_id,
         timestamp=1700000000.0,  # Fixed deterministic timestamp for experimental runs
-        sender_id="Alice",
-        recipient_id="Bob",
+        sender_id="sender",
+        recipient_id="recipient",
         auth_token="eval_token_001",
         nonce=nonce,
         message_bit=1,

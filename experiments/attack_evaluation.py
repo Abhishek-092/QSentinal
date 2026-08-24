@@ -7,7 +7,7 @@ PERFORMS ZERO RUNTIME CALIBRATION, ZERO ARTIFACT MUTATION, AND ZERO CALIBRATION 
 ALL SEEDS ARE ALLOCATED STRICTLY FROM THE 'EVALUATION' RANGE [100000, 1000000).
 """
 import math
-from typing import List, Tuple, Dict, Any, Optional
+from typing import Any
 import numpy as np
 
 from experiments.attack_scenarios import (
@@ -46,7 +46,7 @@ STATISTICAL_LIMITATION_NOTICE = (
 )
 
 
-def compute_wilson_score_interval(k: int, n: int, confidence: float = 0.95) -> Tuple[Optional[float], Optional[float]]:
+def compute_wilson_score_interval(k: int, n: int, confidence: float = 0.95) -> tuple[float | None, float | None]:
     """
     Computes Wilson score 95% confidence interval for proportion k / n.
     Handles boundary cases (k=0, k=n, n=0) gracefully.
@@ -84,10 +84,10 @@ def evaluate_single_attack_trial(
     state = create_initial_stage2_state()
 
     horizon_sessions = stage2_artifact.calibration_configuration["horizon_sessions"]
-    session_ground_truths: List[SessionGroundTruth] = []
+    session_ground_truths: list[SessionGroundTruth] = []
     
-    first_detection_seq: Optional[int] = None
-    terminal_classification: Optional[TrialClassification] = None
+    first_detection_seq: int | None = None
+    terminal_classification: TrialClassification | None = None
 
     # Track if attack occurs anywhere in this scenario's horizon
     is_attack_scenario = (
@@ -183,7 +183,7 @@ def evaluate_single_attack_trial(
     )
 
 
-def aggregate_detection_metrics(trial_results: List[AttackTrialResult], is_honest_baseline: bool) -> DetectionMetrics:
+def aggregate_detection_metrics(trial_results: list[AttackTrialResult], is_honest_baseline: bool) -> DetectionMetrics:
     """
     Aggregates statistical detection metrics across evaluated trials.
     Enforces exact rate denominators and 95% Wilson confidence intervals.
@@ -256,7 +256,7 @@ def run_honest_null_evaluation(
         base_p=base_p,
     )
     
-    trial_results: List[AttackTrialResult] = []
+    trial_results: list[AttackTrialResult] = []
     for t_idx in range(n_trials):
         res = evaluate_single_attack_trial(
             t_idx, scenario, stage1_artifact, stage2_artifact, seed_offset_start + t_idx
@@ -298,7 +298,7 @@ def run_honest_null_evaluation(
 def run_attack_strength_sweep(
     stage1_artifact: CalibrationArtifact,
     stage2_artifact: Stage2CalibrationArtifact,
-    attack_p_x_grid: List[float] = [0.06, 0.08, 0.10, 0.12, 0.15],
+    attack_p_x_grid: list[float] = [0.06, 0.08, 0.10, 0.12, 0.15],
     base_p: float = 0.05,
     n_trials_per_strength: int = 50,
     seed_offset_start: int = 0,
@@ -307,8 +307,8 @@ def run_attack_strength_sweep(
     Mode 2 — Attack Strength Sweep.
     Evaluates detection sensitivity across increasing basis-asymmetric attack strengths.
     """
-    scenarios: List[AttackScenario] = []
-    all_trials: List[AttackTrialResult] = []
+    scenarios: list[AttackScenario] = []
+    all_trials: list[AttackTrialResult] = []
     offset_cursor = seed_offset_start
 
     for idx, p_x in enumerate(attack_p_x_grid):
@@ -365,7 +365,7 @@ def run_attack_strength_sweep(
 def run_delayed_attack_onset_evaluation(
     stage1_artifact: CalibrationArtifact,
     stage2_artifact: Stage2CalibrationArtifact,
-    onset_grid: List[int] = [5, 10, 15, 20],
+    onset_grid: list[int] = [5, 10, 15, 20],
     base_p: float = 0.05,
     attack_p_x: float = 0.12,
     n_trials_per_onset: int = 50,
@@ -375,8 +375,8 @@ def run_delayed_attack_onset_evaluation(
     Mode 3 — Delayed Attack Onset Evaluation.
     Evaluates detection latency and pre-attack false alarm rates across different attack onset sessions.
     """
-    scenarios: List[AttackScenario] = []
-    all_trials: List[AttackTrialResult] = []
+    scenarios: list[AttackScenario] = []
+    all_trials: list[AttackTrialResult] = []
     offset_cursor = seed_offset_start
 
     for idx, onset in enumerate(onset_grid):

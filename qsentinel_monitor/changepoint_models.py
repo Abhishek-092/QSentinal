@@ -6,7 +6,7 @@ provenance identities, stream calibration contexts, and calibrated decision cont
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, Dict, Any
+from typing import Any
 
 
 class ChangePointProcessingOutcome(str, Enum):
@@ -53,15 +53,15 @@ class StreamChangePointContext:
 class ChangePointTestState:
     cusum_statistic: float
     active_run_length: int
-    estimated_excursion_onset: Optional[int]
+    estimated_excursion_onset: int | None
     processed_valid_count: int
     skipped_session_count: int
-    last_accepted_session_id: Optional[str]
+    last_accepted_session_id: str | None
     last_accepted_sequence_number: int
-    provenance_identity: Optional[ChangePointProvenanceIdentity]
+    provenance_identity: ChangePointProvenanceIdentity | None
     decision_status: ChangePointDecisionStatus
-    history_session_ids: Tuple[str, ...]
-    calibration_context: Optional[StreamChangePointContext] = None
+    history_session_ids: tuple[str, ...]
+    calibration_context: StreamChangePointContext | None = None
 
 
 @dataclass(frozen=True)
@@ -72,10 +72,10 @@ class ChangePointUpdateResult:
     session_id: str
     sequence_number: int
     session_log_likelihood_ratio: float
-    applied_null_offset: Optional[float]
-    applied_threshold: Optional[float]
+    applied_null_offset: float | None
+    applied_threshold: float | None
     active_run_length: int
-    estimated_excursion_onset: Optional[int]
+    estimated_excursion_onset: int | None
     diagnostic_reason: str
 
 
@@ -85,12 +85,12 @@ class CalibratedChangePointDecision:
     sequence_number: int
     cusum_statistic: float
     active_run_length: int
-    estimated_excursion_onset: Optional[int]
+    estimated_excursion_onset: int | None
     processed_valid_count: int
     calibration_p: float
-    matched_calibration_p: Optional[float]
-    null_offset_d: Optional[float]
-    empirical_critical_value: Optional[float]
+    matched_calibration_p: float | None
+    null_offset_d: float | None
+    empirical_critical_value: float | None
     horizon_sessions: int
     decision_status: ChangePointDecisionStatus
     outcome: ChangePointProcessingOutcome

@@ -26,7 +26,6 @@ def sample_artifact():
 
 
 def test_calibrated_decision_exact_match_consistent(sample_artifact):
-    """TEST 1: Exact grid match with T below empirical critical value -> MODEL_CONSISTENT."""
     entry = sample_artifact.calibration_table[1]  # p=0.1
     p_val = entry["p"]
     crit_val = entry["empirical_critical_value"]
@@ -50,7 +49,6 @@ def test_calibrated_decision_exact_match_consistent(sample_artifact):
 
 
 def test_calibrated_decision_exact_match_inconsistent(sample_artifact):
-    """TEST 2: Exact grid match with T above empirical critical value -> MODEL_INCONSISTENT."""
     entry = sample_artifact.calibration_table[1]  # p=0.1
     p_val = entry["p"]
     crit_val = entry["empirical_critical_value"]
@@ -73,7 +71,6 @@ def test_calibrated_decision_exact_match_inconsistent(sample_artifact):
 
 
 def test_calibrated_decision_exact_equality_consistent(sample_artifact):
-    """TEST 3: Exact equality T == empirical_critical_value -> MODEL_CONSISTENT."""
     entry = sample_artifact.calibration_table[1]
     p_val = entry["p"]
     crit_val = entry["empirical_critical_value"]
@@ -94,7 +91,6 @@ def test_calibrated_decision_exact_equality_consistent(sample_artifact):
 
 
 def test_calibrated_decision_between_grid(sample_artifact):
-    """TEST 4: Between-grid p_hat -> CALIBRATION_UNAVAILABLE."""
     stage1_res = Stage1Result(
         session_id="s4",
         status="PROCESSED",
@@ -113,7 +109,6 @@ def test_calibrated_decision_between_grid(sample_artifact):
 
 
 def test_calibrated_decision_above_grid(sample_artifact):
-    """TEST 5: Above-grid p_hat -> CALIBRATION_OUT_OF_SUPPORT."""
     stage1_res = Stage1Result(
         session_id="s5",
         status="PROCESSED",
@@ -130,7 +125,6 @@ def test_calibrated_decision_above_grid(sample_artifact):
 
 
 def test_calibrated_decision_below_grid(sample_artifact):
-    """TEST 6: Below-grid p_hat -> CALIBRATION_OUT_OF_SUPPORT."""
     stage1_res = Stage1Result(
         session_id="s6",
         status="PROCESSED",
@@ -147,7 +141,6 @@ def test_calibrated_decision_below_grid(sample_artifact):
 
 
 def test_calibrated_decision_p0_degenerate_boundary(sample_artifact):
-    """TEST 7: p=0.0 artifact entry -> DEGENERATE_BOUNDARY."""
     stage1_res = Stage1Result(
         session_id="s7",
         status="PROCESSED",
@@ -186,7 +179,6 @@ def test_decision_uses_empirical_not_asymptotic(sample_artifact):
 
 
 def test_provenance_propagation(sample_artifact):
-    """TEST 10: Artifact provenance propagates into CalibratedStage1Decision."""
     stage1_res = Stage1Result(
         session_id="s10",
         status="PROCESSED",
@@ -205,7 +197,6 @@ def test_provenance_propagation(sample_artifact):
 
 
 def test_decision_immutability(sample_artifact):
-    """TEST 11: CalibratedStage1Decision is frozen and immutable."""
     stage1_res = Stage1Result(
         session_id="s11",
         status="PROCESSED",

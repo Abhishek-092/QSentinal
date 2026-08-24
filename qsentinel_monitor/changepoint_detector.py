@@ -9,7 +9,7 @@ Computes pure deterministic Offset GLR-CUSUM updates:
 PERFORMS ZERO MONTE CARLO, ZERO SEED ALLOCATION, ZERO SIMULATION, ZERO DISK IO, AND MUTATES NO PROTOCOL DATA.
 """
 import math
-from typing import Optional
+
 
 from qsentinel_monitor.quantum_evidence.models import QuantumEvidence, Stage1Result
 from qsentinel_monitor.sequential_test import compute_session_log_likelihood_ratio
@@ -44,8 +44,8 @@ def update_changepoint_detector(
     stage1_result: Stage1Result,
     sequence_number: int,
     provenance: ChangePointProvenanceIdentity,
-    null_offset_d: Optional[float] = None,
-    threshold: Optional[float] = None,
+    null_offset_d: float | None = None,
+    threshold: float | None = None,
 ) -> ChangePointUpdateResult:
     """
     Applies Offset GLR-CUSUM change-point detector update for a session.

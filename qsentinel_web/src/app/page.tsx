@@ -28,7 +28,7 @@ export default function CommandCenter() {
 
         // Fetch known stream sample or handle empty
         try {
-          const sample = await api.getStream("stream-alice-bob-01");
+          const sample = await api.getStream("stream-sender-recipient-01");
           setStreams([sample]);
         } catch {
           setStreams([]);

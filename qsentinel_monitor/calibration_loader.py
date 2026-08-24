@@ -5,7 +5,7 @@ Loads and verifies versioned, content-hashed calibration artifacts from disk.
 PERFORMS NO MONTE CARLO SIMULATION, SEED ALLOCATION, OR RUNTIME CALIBRATION.
 """
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 import json
 from experiments.calibration import compute_canonical_hash
 
@@ -25,9 +25,9 @@ class CalibrationArtifact:
     schema_version: str
     architecture_version: str
     stage1_model_version: str
-    calibration_configuration: Dict[str, Any]
-    seed_provenance: Dict[str, Any]
-    calibration_table: Tuple[Dict[str, Any], ...]
+    calibration_configuration: dict[str, Any]
+    seed_provenance: dict[str, Any]
+    calibration_table: tuple[dict[str, Any], ...]
     content_hash: str
 
 

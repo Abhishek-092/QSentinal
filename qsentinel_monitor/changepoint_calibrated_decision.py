@@ -10,7 +10,7 @@ Enforces fixed stream calibration operating point (calibration_p) and horizon bo
 PERFORMS ZERO DISK IO, ZERO ARTIFACT LOADING, ZERO SEED ALLOCATION, ZERO MONTE CARLO SIMULATION,
 AND ZERO RND/QDS PROTOCOL CALLS.
 """
-from typing import Tuple, Optional, List
+
 from qsentinel_monitor.changepoint_calibration_loader import ChangePointCalibrationArtifact
 from qsentinel_monitor.quantum_evidence.models import Stage1Result, QuantumEvidence
 from qsentinel_monitor.changepoint_detector import update_changepoint_detector
@@ -33,7 +33,7 @@ def evaluate_calibrated_changepoint(
     calibration_p: float,
     artifact: ChangePointCalibrationArtifact,
     tolerance: float = 1e-4,
-) -> Tuple[ChangePointUpdateResult, CalibratedChangePointDecision]:
+) -> tuple[ChangePointUpdateResult, CalibratedChangePointDecision]:
     """
     Evaluates session evidence against pre-loaded ChangePointCalibrationArtifact.
     Enforces stream operating point calibration_p, exact p-grid lookup, horizon bounds (k <= H vs k > H),

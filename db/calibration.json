@@ -1,0 +1,10 @@
+{
+  "rejection_threshold": 0.08,
+  "s_sprt_threshold": 3.0,
+  "s_gate_threshold": 0.05,
+  "metadata": {
+    "calibration_method": "monte_carlo",
+    "n_simulations": 10000,
+    "confidence": 0.99
+  }
+}

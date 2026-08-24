@@ -1,0 +1,7 @@
+.pytest_cache
+tests
+__pycache__
+*.db
+forensic_store/*.jsonl
+forensic_store/*.pem
+frontend/node_modules

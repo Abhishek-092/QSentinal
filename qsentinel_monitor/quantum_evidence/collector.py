@@ -8,7 +8,7 @@ Computes:
 Note: Pauli transmission integrity is deferred per Correction 2 as no distinct transmission boundary exists.
 """
 import numpy as np
-from typing import Dict, Any
+from typing import Any
 from qds.transcript import SessionTranscript
 from qsentinel_monitor.quantum_evidence.models import QuantumEvidence
 
@@ -64,7 +64,7 @@ def extract_evidence(transcript: SessionTranscript) -> QuantumEvidence:
         if np.isnan(val) or np.isinf(val) or not (0.0 <= val <= 1.0):
             raise EvidenceExtractionError(f"Invalid rate computed for {name}: {val}")
 
-    raw_summary: Dict[str, Any] = {
+    raw_summary: dict[str, Any] = {
         "sample_count": sample_count,
         "total_sifted": sifted_count,
         "total_mismatches": total_mismatches,

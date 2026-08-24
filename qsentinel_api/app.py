@@ -1,10 +1,10 @@
 """
-Phase 11 FastAPI Application Factory for QSENTINEL.
+FastAPI Application Factory for QSENTINEL.
 
 Exposes `create_app(db_path=...)` to construct the FastAPI application boundary,
 initialize database schema, mount routers under `/api/v1`, and register domain error handlers.
 """
-from typing import Optional
+
 from fastapi import FastAPI
 
 from qsentinel_api.dependencies import APISettings
@@ -18,7 +18,7 @@ from qsentinel_api.routers import (
 from qsentinel_monitor.persistence.database import init_database
 
 
-def create_app(db_path: Optional[str] = None) -> FastAPI:
+def create_app(db_path: str | None = None) -> FastAPI:
     """
     Application factory creating a production-grade FastAPI application.
     Supports clean dependency injection of database path for isolation during testing.

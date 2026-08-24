@@ -1,9 +1,5 @@
-"""
-Phase 11 Pydantic API Schemas for QSENTINEL.
-
-Defines HTTP Request & Response schemas separating external API interfaces from internal domain dataclasses.
-"""
-from typing import Optional, List, Dict, Any, Tuple
+"""HTTP request/response schemas for the API layer."""
+from typing import Any
 from pydantic import BaseModel, Field
 
 
@@ -30,8 +26,8 @@ class ReadinessResponse(BaseModel):
 # --- Stream Schemas ---
 
 class StreamCreateRequest(BaseModel):
-    stream_id: str = Field(..., json_schema_extra={"example": "stream-alice-bob-01"})
-    description: Optional[str] = Field("", json_schema_extra={"example": "QDS Channel between Alice and Bob"})
+    stream_id: str = Field(..., json_schema_extra={"example": "stream-sender-recipient-01"})
+    description: str | None = Field("", json_schema_extra={"example": "QDS Channel between sender and recipient"})
 
 
 class StreamResponse(BaseModel):
@@ -45,7 +41,7 @@ class StreamResponse(BaseModel):
 
 class EpochCreateRequest(BaseModel):
     calibration_p: float = Field(0.02, json_schema_extra={"example": 0.02}, description="Explicit channel noise operating point")
-    additional_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    additional_context: dict[str, Any | None] = Field(default_factory=dict)
 
 
 class EpochResponse(BaseModel):
@@ -53,19 +49,19 @@ class EpochResponse(BaseModel):
     stream_id: str
     epoch_index: int
     status: str
-    termination_reason: Optional[str] = None
-    stage1_artifact_hash: Optional[str] = None
-    stage2_artifact_hash: Optional[str] = None
-    changepoint_artifact_hash: Optional[str] = None
-    calibration_context: Dict[str, Any]
+    termination_reason: str | None = None
+    stage1_artifact_hash: str | None = None
+    stage2_artifact_hash: str | None = None
+    changepoint_artifact_hash: str | None = None
+    calibration_context: dict[str, Any]
     created_at: str
-    closed_at: Optional[str] = None
+    closed_at: str | None = None
 
 
 class EpochRenewRequest(BaseModel):
     calibration_p: float = Field(0.02, json_schema_extra={"example": 0.02})
-    termination_reason: Optional[str] = Field("EXPLICIT_RENEWAL")
-    additional_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    termination_reason: str | None = Field("EXPLICIT_RENEWAL")
+    additional_context: dict[str, Any | None] = Field(default_factory=dict)
 
 
 # --- Session Submission Schemas ---
@@ -88,16 +84,16 @@ class SessionTranscriptSchema(BaseModel):
     auth_token: str
     nonce: str
     message_bit: int
-    keys: List[int]
-    bases: List[int]
-    recipient_bases: List[int]
-    bell_outcomes: List[List[int]]
-    raw_measurements: List[int]
-    sifted_indices: List[int]
-    mismatch_flags: List[bool]
-    pauli_corrections_applied: List[List[int]]
+    keys: list[int]
+    bases: list[int]
+    recipient_bases: list[int]
+    bell_outcomes: list[list[int]]
+    raw_measurements: list[int]
+    sifted_indices: list[int]
+    mismatch_flags: list[bool]
+    pauli_corrections_applied: list[list[int]]
     protocol_decision: ProtocolDecisionSchema
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    metadata: dict[str, Any | None] = Field(default_factory=dict)
 
 
 class SessionSubmissionRequest(BaseModel):
@@ -125,14 +121,14 @@ class Stage1ResultSchema(BaseModel):
     status: str
     best_fit_p: float
     statistic: float
-    uncalibrated_theoretical_p_value: Optional[float] = None
+    uncalibrated_theoretical_p_value: float | None = None
     optimization_success: bool
 
 
 class ProvenanceBundleSchema(BaseModel):
-    stage1_artifact_hash: Optional[str] = None
-    stage2_artifact_hash: Optional[str] = None
-    changepoint_artifact_hash: Optional[str] = None
+    stage1_artifact_hash: str | None = None
+    stage2_artifact_hash: str | None = None
+    changepoint_artifact_hash: str | None = None
     architecture_version: str = "v9.0"
 
 
@@ -141,9 +137,9 @@ class UnifiedThreatAssessmentSchema(BaseModel):
     sequence_number: int
     security_posture: str
     threat_severity: str
-    contributing_detectors: List[str]
+    contributing_detectors: list[str]
     explanation: str
-    estimated_excursion_onset: Optional[int] = None
+    estimated_excursion_onset: int | None = None
     stage2_horizon_exceeded: bool
     changepoint_horizon_exceeded: bool
     provenance_bundle: ProvenanceBundleSchema
@@ -170,4 +166,4 @@ class MonitoringStateResponseSchema(BaseModel):
     changepoint_decision_status: str
     changepoint_cusum_statistic: float
     changepoint_active_run_length: int
-    changepoint_estimated_onset: Optional[int] = None
+    changepoint_estimated_onset: int | None = None

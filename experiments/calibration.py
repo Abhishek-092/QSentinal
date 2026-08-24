@@ -5,7 +5,7 @@ Generates conditional calibration tables across an honest p-grid using CALIBRATI
 Produces versioned, SHA-256 content-hashed calibration artifacts.
 """
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+from typing import Any
 import json
 import hashlib
 import numpy as np
@@ -22,7 +22,7 @@ class CalibrationTableEntry:
     null_classification: str  # "DEGENERATE_BOUNDARY_NULL" or "REGULAR_INTERIOR_NULL"
     empirical_critical_value: float
     asymptotic_reference_applicability: str  # "NOT_REGULARLY_APPLICABLE" or "REGULAR_CHI2_DF1"
-    asymptotic_critical_value: Optional[float]
+    asymptotic_critical_value: float | None
     n_trials: int
     quantile_probability: float
 
@@ -34,11 +34,11 @@ def build_canonical_payload(
     n_qubits: int,
     alpha: float,
     n_trials_per_grid_point: int,
-    p_grid: List[float],
+    p_grid: list[float],
     seed_start: int,
     seed_count: int,
-    table_entries: List[CalibrationTableEntry],
-) -> Dict[str, Any]:
+    table_entries: list[CalibrationTableEntry],
+) -> dict[str, Any]:
     """
     Constructs deterministic canonical payload dictionary without wall-clock timestamps or UUIDs.
     """
@@ -64,7 +64,7 @@ def build_canonical_payload(
     }
 
 
-def compute_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
+def compute_canonical_hash(canonical_payload: dict[str, Any]) -> str:
     """
     Computes SHA-256 content hash from canonical JSON string (sorted keys, indent 2, ascii).
     """
@@ -73,7 +73,7 @@ def compute_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
 
 
 def generate_calibration_artifact(
-    p_grid: List[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+    p_grid: list[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
     n_qubits: int = 200,
     alpha: float = 0.01,
     n_trials_per_grid_point: int = 1000,
@@ -81,7 +81,7 @@ def generate_calibration_artifact(
     schema_version: str = "1.0",
     architecture_version: str = "v5.0",
     stage1_model_version: str = "v1.0",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes offline conditional Stage 1 calibration across p_grid using CALIBRATION seeds.
     Enforces capacity bounds and deep immutability provenance.
@@ -94,7 +94,7 @@ def generate_calibration_artifact(
             f"Requested {total_seeds_required} seeds starting from {seed_start} exceeds CALIBRATION range limit (50000)."
         )
 
-    table_entries: List[CalibrationTableEntry] = []
+    table_entries: list[CalibrationTableEntry] = []
 
     for g_idx, p_val in enumerate(p_grid):
         p_val_rounded = float(round(p_val, 4))
@@ -157,3 +157,9 @@ def generate_calibration_artifact(
     artifact_dict = dict(canonical_payload)
     artifact_dict["content_hash"] = content_hash
     return artifact_dict
+
+
+def run_monte_carlo_calibration(n_simulations: int = 1000) -> dict[str, Any]:
+    """Compatibility wrapper for api/main.py trigger_calibration route."""
+    return generate_calibration_artifact(n_trials_per_grid_point=max(10, n_simulations // 7))
+

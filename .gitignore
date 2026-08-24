@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
@@ -72,26 +73,45 @@ venv.bak/
 *.sqlite
 *.sqlite3
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # SQLite journal/wal files
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
 
-# Forensic store runtime logs (keep directory structure if needed, ignore generated JSONL files)
+# Runtime data directory
+data/
+logs/
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Forensic store runtime logs and signing keys (keep directory structure, ignore generated files)
 forensic_store/*.jsonl
+forensic_store/*.pem
 
 # Calibration and Experiment Artifacts (ignore raw array output, keep version structure via .gitkeep)
 artifacts/calibration/*/*.npz
 artifacts/experiment_runs/*
+artifacts/calibration/*/artifact.json
+artifacts/calibration/*/*.json
 
 # Node / Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/build/
 frontend/.cache/
+.qsentinel_web/node_modules/
+qsentinel_web/.next/
+qsentinel_web/out/
+qsentinel_web/.vercel/
 .eslintcache
 .stylelintcache
+package-lock.json
 
 # OS generated files
 .DS_Store
@@ -109,9 +129,25 @@ QSENTINEL_Implementation_Blueprint_final.md
 QSENTINEL_Implementation_Blueprint.md
 *.md.bak
 
+# Build artifacts
+qsentinel.egg-info/
+*.egg
+build/
+dist/
+
+# Temp and backup files
+tmp/
+*.tmp
+*.bak
+*.orig
+
+# Vercel
+.vercel/
+
 # IDEs and Editors
 .idea/
 .vscode/
 *.swp
 *.swo
+.freebuff/
 *~

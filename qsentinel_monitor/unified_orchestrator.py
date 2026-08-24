@@ -7,7 +7,7 @@ threat assessment pipeline.
 PERFORMS ZERO MONTE CARLO, ZERO SEED ALLOCATION, ZERO SIMULATION, ZERO PROTOCOL MUTATION,
 AND ZERO RUNTIME CALIBRATION.
 """
-from typing import Optional, Tuple, List
+
 
 from qds.transcript import SessionTranscript
 from qsentinel_monitor.quantum_evidence.collector import extract_evidence
@@ -58,18 +58,18 @@ def create_initial_unified_state() -> UnifiedMonitoringState:
 def evaluate_unified_threat(
     session_id: str,
     sequence_number: int,
-    stage1_dec: Optional[CalibratedStage1Decision],
-    stage2_dec: Optional[CalibratedStage2Decision],
-    changepoint_dec: Optional[CalibratedChangePointDecision],
-    stage1_artifact: Optional[CalibrationArtifact] = None,
-    stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-    changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+    stage1_dec: CalibratedStage1Decision | None,
+    stage2_dec: CalibratedStage2Decision | None,
+    changepoint_dec: CalibratedChangePointDecision | None,
+    stage1_artifact: CalibrationArtifact | None = None,
+    stage2_artifact: Stage2CalibrationArtifact | None = None,
+    changepoint_artifact: ChangePointCalibrationArtifact | None = None,
 ) -> UnifiedThreatAssessment:
     """
     Synthesizes individual detector decisions into an authoritative UnifiedThreatAssessment.
     Enforces deterministic severity escalation, contributing detector aggregation, and provenance bundling.
     """
-    contributing: List[str] = []
+    contributing: list[str] = []
     st1_elevated = (
         stage1_dec is not None
         and stage1_dec.decision == CalibratedDecisionStatus.MODEL_INCONSISTENT
@@ -154,10 +154,10 @@ def evaluate_unified_threat(
 
 def analyze_unified_session(
     transcript: SessionTranscript,
-    previous_unified_state: Optional[UnifiedMonitoringState] = None,
-    stage1_artifact: Optional[CalibrationArtifact] = None,
-    stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-    changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+    previous_unified_state: UnifiedMonitoringState | None = None,
+    stage1_artifact: CalibrationArtifact | None = None,
+    stage2_artifact: Stage2CalibrationArtifact | None = None,
+    changepoint_artifact: ChangePointCalibrationArtifact | None = None,
     calibration_p: float = 0.02,
 ) -> UnifiedMonitoringResult:
     """
@@ -173,7 +173,6 @@ def analyze_unified_session(
     """
     session_id = transcript.session_id
 
-    # 1. State setup
     if previous_unified_state is None:
         state = create_initial_unified_state()
     else:
@@ -181,17 +180,14 @@ def analyze_unified_session(
 
     seq_num = state.sequence_number + 1
 
-    # 2. Extract quantum evidence telemetry
     evidence: QuantumEvidence = extract_evidence(transcript)
 
-    # 3. Stage 1 evaluation
     stage1_res: Stage1Result = evaluate_stage1(evidence)
-    st1_dec: Optional[CalibratedStage1Decision] = None
+    st1_dec: CalibratedStage1Decision | None = None
     if stage1_artifact is not None:
         st1_dec = evaluate_calibrated_stage1(stage1_res, stage1_artifact)
 
-    # 4. Stage 2 evaluation
-    st2_dec: Optional[CalibratedStage2Decision] = None
+    st2_dec: CalibratedStage2Decision | None = None
     next_st2_state = state.stage2_state
     if stage2_artifact is not None:
         up_st2, st2_dec = evaluate_calibrated_stage2(
@@ -204,8 +200,7 @@ def analyze_unified_session(
         )
         next_st2_state = up_st2.next_state
 
-    # 5. Change-Point evaluation
-    cp_dec: Optional[CalibratedChangePointDecision] = None
+    cp_dec: CalibratedChangePointDecision | None = None
     next_cp_state = state.changepoint_state
     if changepoint_artifact is not None:
         up_cp, cp_dec = evaluate_calibrated_changepoint(
@@ -218,7 +213,6 @@ def analyze_unified_session(
         )
         next_cp_state = up_cp.next_state
 
-    # 6. Unified threat assessment synthesis
     threat_assessment = evaluate_unified_threat(
         session_id=session_id,
         sequence_number=seq_num,

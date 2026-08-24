@@ -4,7 +4,7 @@ All domain objects use deeply immutable dataclasses with tuples.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Dict, Any, Tuple
+from typing import Any
 from qds.transcript import ProtocolDecision, SessionTranscript
 
 
@@ -38,12 +38,12 @@ class CalibratedStage1Decision:
     lookup_status: CalibrationLookupStatus
     decision: CalibratedDecisionStatus
 
-    matched_calibration_p: Optional[float]
+    matched_calibration_p: float | None
 
-    empirical_critical_value: Optional[float]
-    asymptotic_critical_value: Optional[float]
+    empirical_critical_value: float | None
+    asymptotic_critical_value: float | None
 
-    margin_to_critical_value: Optional[float]
+    margin_to_critical_value: float | None
 
     artifact_content_hash: str
     artifact_schema_version: str
@@ -73,7 +73,28 @@ class QuantumEvidence:
     x_sifted_count: int
     x_mismatch_count: int
     x_mismatch_rate: float
-    raw_evidence_summary: Dict[str, Any]
+    raw_evidence_summary: dict[str, Any]
+
+    @property
+    def mismatch_rate(self) -> float:
+        return self.overall_mismatch_rate
+
+    @property
+    def correlation(self) -> float:
+        return 1.0 - 2.0 * self.overall_mismatch_rate
+
+    @property
+    def entropy(self) -> float:
+        p = self.overall_mismatch_rate
+        if p <= 0 or p >= 1:
+            return 0.0
+        import math
+        return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
+
+    @property
+    def pauli_consistency(self) -> float:
+        return max(0.0, 1.0 - 2.0 * self.overall_mismatch_rate)
+
 
 
 @dataclass(frozen=True)
@@ -87,9 +108,30 @@ class Stage1Result:
     status: str  # "PROCESSED" or "OPTIMIZER_FAILURE"
     best_fit_p: float
     statistic: float  # Raw profile-likelihood ratio test statistic T
-    uncalibrated_theoretical_p_value: Optional[float]  # Clearly labeled as theoretical / uncalibrated
+    uncalibrated_theoretical_p_value: float | None  # Clearly labeled as theoretical / uncalibrated
     optimization_success: bool
-    diagnostic_info: Dict[str, Any]
+    diagnostic_info: dict[str, Any]
+
+    @property
+    def p_hat(self) -> float:
+        return self.best_fit_p
+
+    @property
+    def ll_ratio(self) -> float:
+        return self.statistic
+
+    @property
+    def passed(self) -> bool:
+        return self.status == "PROCESSED" and self.statistic < 3.841
+
+    @property
+    def details(self) -> str:
+        return f"Stage 1 status={self.status}, T={self.statistic:.4f}, p_hat={self.best_fit_p:.4f}"
+
+    @property
+    def optimizer_converged(self) -> bool:
+        return self.optimization_success
+
 
 
 @dataclass(frozen=True)
@@ -103,5 +145,5 @@ class MonitoringResult:
     monitoring_status: str  # e.g., "MONITORED_ADVISORY"
     evidence: QuantumEvidence
     stage1_result: Stage1Result
-    calibrated_decision: Optional[CalibratedStage1Decision] = None
+    calibrated_decision: CalibratedStage1Decision | None = None
     is_advisory: bool = True

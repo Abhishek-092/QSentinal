@@ -5,7 +5,7 @@ Loads, verifies SHA-256 content hashes, and exposes immutable ChangePointCalibra
 PERFORMS ZERO MONTE CARLO, ZERO SEED ALLOCATION, ZERO SIMULATION, AND MUTATES NO ARTIFACTS.
 """
 from dataclasses import dataclass, asdict
-from typing import Dict, Any, List, Optional
+from typing import Any
 import json
 import hashlib
 import os
@@ -16,13 +16,13 @@ class ChangePointCalibrationArtifact:
     schema_version: str
     architecture_version: str
     changepoint_model_version: str
-    calibration_configuration: Dict[str, Any]
-    seed_provenance: Dict[str, Any]
-    calibration_table: List[Dict[str, Any]]
+    calibration_configuration: dict[str, Any]
+    seed_provenance: dict[str, Any]
+    calibration_table: list[dict[str, Any]]
     content_hash: str
 
 
-def compute_changepoint_canonical_hash(payload: Dict[str, Any]) -> str:
+def compute_changepoint_canonical_hash(payload: dict[str, Any]) -> str:
     """Computes canonical SHA-256 hash over canonical JSON payload."""
     canonical_payload = {k: v for k, v in payload.items() if k != "content_hash"}
     json_str = json.dumps(canonical_payload, sort_keys=True, indent=2, ensure_ascii=True)

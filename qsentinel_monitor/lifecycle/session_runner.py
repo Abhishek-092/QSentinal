@@ -6,7 +6,7 @@ conflicting session ID rejection, out-of-order rejection, and partial detector e
 """
 import json
 import uuid
-from typing import Optional, Dict, Any, Tuple
+from typing import Any
 
 from qds.transcript import SessionTranscript
 from qsentinel_monitor.persistence.database import get_connection, transaction_scope
@@ -78,14 +78,13 @@ class TransactionalSessionRunner:
         self,
         epoch_id: str,
         transcript: SessionTranscript,
-        stage1_artifact: Optional[CalibrationArtifact] = None,
-        stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-        changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+        stage1_artifact: CalibrationArtifact | None = None,
+        stage2_artifact: Stage2CalibrationArtifact | None = None,
+        changepoint_artifact: ChangePointCalibrationArtifact | None = None,
     ) -> UnifiedMonitoringResult:
         """
         Processes a session within an active epoch atomically.
         """
-        # 1. Fetch & validate Epoch
         epoch = EpochRepository.get_epoch(self.db_path, epoch_id)
         if epoch is None:
             raise ValueError(f"Epoch {epoch_id} does not exist.")
@@ -95,7 +94,6 @@ class TransactionalSessionRunner:
         context = json.loads(epoch.calibration_context_json)
         calibration_p = float(context.get("calibration_p", 0.02))
 
-        # 2. Check duplicate / conflicting session submission
         existing_session = SessionRepository.get_session_by_id(self.db_path, epoch_id, transcript.session_id)
         current_fingerprint = _compute_transcript_fingerprint(transcript)
 
@@ -131,7 +129,6 @@ class TransactionalSessionRunner:
                     f"Session ID {transcript.session_id} reused with conflicting transcript content!"
                 )
 
-        # 3. Restore & verify latest state snapshot (Crash recovery / sequential continuation)
         latest_snap_tuple = SessionRepository.get_latest_snapshot(self.db_path, epoch_id)
         if latest_snap_tuple is not None:
             current_state, snap_hash = latest_snap_tuple
@@ -140,7 +137,6 @@ class TransactionalSessionRunner:
 
         expected_seq = current_state.sequence_number + 1
 
-        # 4. Execute domain orchestrator evaluation
         result: UnifiedMonitoringResult = analyze_unified_session(
             transcript=transcript,
             previous_unified_state=current_state,
@@ -150,7 +146,6 @@ class TransactionalSessionRunner:
             calibration_p=calibration_p,
         )
 
-        # 5. Partial Expiry & Elevation Status Update Logic
         next_st = result.next_unified_state
         st2_status = next_st.stage2_state.decision_status
         cp_status = next_st.changepoint_state.decision_status
@@ -171,7 +166,6 @@ class TransactionalSessionRunner:
             termination_reason = "ALL_DETECTORS_EXPIRED"
         # Partial Expiry Policy: If only one detector expires, epoch remains ACTIVE
 
-        # 6. Atomic Transaction Commit
         st2_state_json = canonical_json_dumps(next_st.stage2_state)
         cp_state_json = canonical_json_dumps(next_st.changepoint_state)
         snapshot_payload = {

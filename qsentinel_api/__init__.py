@@ -1,5 +1,5 @@
 """
-Phase 11 Package Initialization for QSENTINEL API.
+Package initialization API.
 """
 from qsentinel_api.app import create_app
 

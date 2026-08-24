@@ -13,7 +13,7 @@ Uses deterministic STREAM seed allocation and SHA-256 canonical hashing.
 PERFORMS ZERO DISK MUTATION AT RUNTIME.
 """
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+from typing import Any
 import json
 import hashlib
 import os
@@ -58,11 +58,11 @@ def build_changepoint_canonical_payload(
     alpha: float,
     horizon_sessions: int,
     n_trials_per_grid_point: int,
-    p_grid: List[float],
+    p_grid: list[float],
     seed_start: int,
     seed_count: int,
-    table_entries: List[ChangePointCalibrationTableEntry],
-) -> Dict[str, Any]:
+    table_entries: list[ChangePointCalibrationTableEntry],
+) -> dict[str, Any]:
     """
     Constructs deterministic canonical Change-Point payload dictionary without wall-clock timestamps or UUIDs.
     """
@@ -96,14 +96,14 @@ def build_changepoint_canonical_payload(
     }
 
 
-def compute_changepoint_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
+def compute_changepoint_canonical_hash(canonical_payload: dict[str, Any]) -> str:
     """Computes SHA-256 content hash from canonical JSON string."""
     json_str = json.dumps(canonical_payload, sort_keys=True, indent=2, ensure_ascii=True)
     return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
 
 
 def generate_changepoint_calibration_artifact(
-    p_grid: List[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+    p_grid: list[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
     n_qubits: int = 200,
     alpha: float = 0.01,
     horizon_sessions: int = 50,
@@ -113,7 +113,7 @@ def generate_changepoint_calibration_artifact(
     schema_version: str = "1.0",
     architecture_version: str = "v8.0",
     changepoint_model_version: str = "v1.0",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Executes offline conditional Change-Point (Offset GLR-CUSUM) calibration across p_grid using STREAM CALIBRATION seeds.
     Enforces stream capacity bounds and deep immutability provenance.
@@ -125,7 +125,7 @@ def generate_changepoint_calibration_artifact(
             f"Requested {total_stream_seeds_required} stream seeds starting from {seed_start} exceeds CALIBRATION range limit (50000)."
         )
 
-    table_entries: List[ChangePointCalibrationTableEntry] = []
+    table_entries: list[ChangePointCalibrationTableEntry] = []
 
     for grid_idx, p in enumerate(p_grid):
         if abs(p) < 1e-12:
@@ -146,7 +146,7 @@ def generate_changepoint_calibration_artifact(
             continue
 
         # Phase 1 of calibration: Estimate mu_H0(p) across all trials
-        glr_values: List[float] = []
+        glr_values: list[float] = []
 
         for trial_idx in range(n_trials_per_grid_point):
             stream_seed = seed_start + grid_idx * n_trials_per_grid_point + trial_idx
@@ -164,7 +164,7 @@ def generate_changepoint_calibration_artifact(
         null_offset_d = float(null_mean_glr + delta_offset_margin)
 
         # Phase 2 of calibration: Run Offset CUSUM and record max CUSUM per trial M_H_CUSUM
-        max_cusum_per_trial: List[float] = []
+        max_cusum_per_trial: list[float] = []
 
         for trial_idx in range(n_trials_per_grid_point):
             stream_seed = seed_start + grid_idx * n_trials_per_grid_point + trial_idx
@@ -221,7 +221,7 @@ def generate_changepoint_calibration_artifact(
     return payload
 
 
-def save_changepoint_calibration_artifact(payload: Dict[str, Any], output_path: str) -> None:
+def save_changepoint_calibration_artifact(payload: dict[str, Any], output_path: str) -> None:
     """Saves verified canonical change-point calibration payload to disk."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:

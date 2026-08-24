@@ -8,7 +8,7 @@ import hashlib
 import json
 from dataclasses import is_dataclass, asdict
 from enum import Enum
-from typing import Any, Dict, Type, TypeVar, Optional, Tuple
+from typing import Any, Type, TypeVar
 
 from qsentinel_monitor.sequential_test_models import (
     SequentialTestState,
@@ -58,7 +58,7 @@ def compute_sha256_hash(payload: Any) -> str:
 
 # --- De-serialization Helpers ---
 
-def deserialize_stage2_provenance(d: Optional[Dict[str, Any]]) -> Optional[Stage2ProvenanceIdentity]:
+def deserialize_stage2_provenance(d: dict[str, Any | None]) -> Stage2ProvenanceIdentity | None:
     if d is None:
         return None
     return Stage2ProvenanceIdentity(
@@ -70,7 +70,7 @@ def deserialize_stage2_provenance(d: Optional[Dict[str, Any]]) -> Optional[Stage
     )
 
 
-def deserialize_changepoint_provenance(d: Optional[Dict[str, Any]]) -> Optional[ChangePointProvenanceIdentity]:
+def deserialize_changepoint_provenance(d: dict[str, Any | None]) -> ChangePointProvenanceIdentity | None:
     if d is None:
         return None
     return ChangePointProvenanceIdentity(
@@ -82,7 +82,7 @@ def deserialize_changepoint_provenance(d: Optional[Dict[str, Any]]) -> Optional[
     )
 
 
-def deserialize_stage2_state(d: Dict[str, Any]) -> SequentialTestState:
+def deserialize_stage2_state(d: dict[str, Any]) -> SequentialTestState:
     return SequentialTestState(
         cumulative_log_likelihood_ratio=float(d["cumulative_log_likelihood_ratio"]),
         processed_valid_count=int(d["processed_valid_count"]),
@@ -95,7 +95,7 @@ def deserialize_stage2_state(d: Dict[str, Any]) -> SequentialTestState:
     )
 
 
-def deserialize_changepoint_state(d: Dict[str, Any]) -> ChangePointTestState:
+def deserialize_changepoint_state(d: dict[str, Any]) -> ChangePointTestState:
     return ChangePointTestState(
         cusum_statistic=float(d["cusum_statistic"]),
         active_run_length=int(d["active_run_length"]),
@@ -110,7 +110,7 @@ def deserialize_changepoint_state(d: Dict[str, Any]) -> ChangePointTestState:
     )
 
 
-def deserialize_unified_state(d: Dict[str, Any]) -> UnifiedMonitoringState:
+def deserialize_unified_state(d: dict[str, Any]) -> UnifiedMonitoringState:
     return UnifiedMonitoringState(
         sequence_number=int(d["sequence_number"]),
         stage2_state=deserialize_stage2_state(d["stage2_state"]),
@@ -118,7 +118,7 @@ def deserialize_unified_state(d: Dict[str, Any]) -> UnifiedMonitoringState:
     )
 
 
-def deserialize_threat_assessment(d: Dict[str, Any]) -> UnifiedThreatAssessment:
+def deserialize_threat_assessment(d: dict[str, Any]) -> UnifiedThreatAssessment:
     prov = d["provenance_bundle"]
     prov_bundle = ProvenanceBundle(
         stage1_artifact_hash=prov["stage1_artifact_hash"],

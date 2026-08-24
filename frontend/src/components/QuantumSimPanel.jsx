@@ -50,7 +50,7 @@ export default function QuantumSimPanel({ snapshot, title = 'Live statevector' }
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <BlochPlane label="Authorized |ψ⟩ Bloch (x–z)" vector={snapshot.bloch_message} />
-        <BlochPlane label="Bob reconstructed Bloch (x–z)" vector={snapshot.bloch_bob} />
+        <BlochPlane label="Recipient reconstructed Bloch (x–z)" vector={snapshot.bloch_bob} />
       </div>
       <div>
         <div className="mb-2 font-mono text-[11px] text-dim">P(|q0 q1 q2⟩)</div>

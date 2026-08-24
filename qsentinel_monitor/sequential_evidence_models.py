@@ -6,7 +6,7 @@ provenance contracts, and decision status including Phase 6C calibrated threshol
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, Dict, Any
+from typing import Any
 from qsentinel_monitor.quantum_evidence.models import CalibratedStage1Decision, CalibratedDecisionStatus
 
 
@@ -47,11 +47,11 @@ class SequentialEvidenceState:
     cumulative_evidence: float
     processed_valid_count: int
     skipped_session_count: int
-    last_accepted_session_id: Optional[str]
+    last_accepted_session_id: str | None
     last_accepted_sequence_number: int
-    provenance_identity: Optional[ProvenanceIdentity]
+    provenance_identity: ProvenanceIdentity | None
     decision_status: SequentialDecisionStatus
-    history_session_ids: Tuple[str, ...]
+    history_session_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True)

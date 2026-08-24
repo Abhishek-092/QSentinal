@@ -126,44 +126,47 @@ async def session_stream(
     theta: float = Query(0.7853981633974483),
 ):
     async def event_generator():
-        transcript = None
-        for event in iterate_session(session_id, noise_p=noise_p, theta=theta):
-            await asyncio.sleep(0.35)
-            if event.get("transcript") is not None:
-                transcript = event["transcript"]
+        try:
+            transcript = None
+            for event in iterate_session(session_id, noise_p=noise_p, theta=theta):
+                await asyncio.sleep(0.12)
+                if event.get("transcript") is not None:
+                    transcript = event["transcript"]
+                yield {
+                    "event": "progress",
+                    "data": _dumps({
+                        "step": event.get("phase") or event.get("step"),
+                        "progress": event.get("progress", 0),
+                        "snapshot": event.get("snapshot"),
+                    }),
+                }
+
+            if transcript is None:
+                transcript = run_session(session_id, noise_p=noise_p, theta=theta)
+            decision = analyze(transcript, transcript.protocol_decision)
+            append_log_entry(transcript.protocol_decision, decision, transcript.measurement_telemetry)
+            mismatch_rate = transcript.measurement_telemetry.get("mismatch_rate", 0.0)
+            cusum_update = _cusum.update(session_id, mismatch_rate)
             yield {
-                "event": "progress",
+                "event": "complete",
                 "data": _dumps({
-                    "step": event.get("phase") or event.get("step"),
-                    "progress": event.get("progress", 0),
-                    "snapshot": event.get("snapshot"),
+                    "session_id": session_id,
+                    "accepted": transcript.protocol_decision.accepted,
+                    "reason": transcript.protocol_decision.reason,
+                    "verdict": decision.verdict,
+                    "details": decision.details,
+                    "telemetry": transcript.measurement_telemetry,
+                    "snapshot": transcript.measurement_telemetry,
+                    "monitoring": {
+                        "stage1_passed": decision.stage1_passed,
+                        "stage2_passed": decision.stage2_passed,
+                        "cusum_value": cusum_update.cusum_value,
+                        "drift_detected": cusum_update.drift_detected,
+                    },
                 }),
             }
-
-        if transcript is None:
-            transcript = run_session(session_id, noise_p=noise_p, theta=theta)
-        decision = analyze(transcript, transcript.protocol_decision)
-        append_log_entry(transcript.protocol_decision, decision, transcript.measurement_telemetry)
-        mismatch_rate = transcript.measurement_telemetry.get("mismatch_rate", 0.0)
-        cusum_update = _cusum.update(session_id, mismatch_rate)
-        yield {
-            "event": "complete",
-            "data": _dumps({
-                "session_id": session_id,
-                "accepted": transcript.protocol_decision.accepted,
-                "reason": transcript.protocol_decision.reason,
-                "verdict": decision.verdict,
-                "details": decision.details,
-                "telemetry": transcript.measurement_telemetry,
-                "snapshot": transcript.measurement_telemetry,
-                "monitoring": {
-                    "stage1_passed": decision.stage1_passed,
-                    "stage2_passed": decision.stage2_passed,
-                    "cusum_value": cusum_update.cusum_value,
-                    "drift_detected": cusum_update.drift_detected,
-                },
-            }),
-        }
+        except asyncio.CancelledError:
+            return
 
     return EventSourceResponse(event_generator())
 

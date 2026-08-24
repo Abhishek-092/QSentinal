@@ -9,6 +9,16 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED') {
+              return;
+            }
+            console.error('[vite proxy error]:', err);
+          });
+        },
       },
     },
   },

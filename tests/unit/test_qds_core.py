@@ -44,4 +44,4 @@ def test_transcript_immutability():
         transcript.protocol_decision = None
 
     with pytest.raises(FrozenInstanceError):
-        transcript.sender_id = "Mallory"
+        transcript.sender_id = "adversary"

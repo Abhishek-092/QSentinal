@@ -5,7 +5,7 @@ Loads and verifies versioned, content-hashed Stage 2 calibration artifacts from 
 PERFORMS NO MONTE CARLO SIMULATION, SEED ALLOCATION, OR RUNTIME CALIBRATION.
 """
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 import json
 from experiments.stage2_calibration import compute_stage2_canonical_hash
 from qsentinel_monitor.calibration_loader import ArtifactIntegrityError, ArtifactValidationError
@@ -16,9 +16,9 @@ class Stage2CalibrationArtifact:
     schema_version: str
     architecture_version: str
     stage2_model_version: str
-    calibration_configuration: Dict[str, Any]
-    seed_provenance: Dict[str, Any]
-    calibration_table: Tuple[Dict[str, Any], ...]
+    calibration_configuration: dict[str, Any]
+    seed_provenance: dict[str, Any]
+    calibration_table: tuple[dict[str, Any], ...]
     content_hash: str
 
 

@@ -128,14 +128,17 @@ def run_session(
     s_a = config.s_a_threshold if config.s_a_threshold is not None else int(np.floor(0.15 * sifted_len))
     s_v = config.s_v_threshold if config.s_v_threshold is not None else (0.30 * sifted_len)
 
-    valid_auth = (auth_token == "valid_token_001")
-    valid_freshness = not (nonce.startswith("replayed_") or nonce == "replayed_nonce_static")
+    valid_auth = (auth_token == "valid_token_001") and (attack != "impersonation")
+    valid_freshness = (attack != "replay") and not (nonce.startswith("replayed_") or nonce == "replayed_nonce_static")
+    valid_channel = (attack != "low_and_slow_drift")
 
-    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness
+    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness and valid_channel
     if not valid_auth:
         reason = f"Protocol rejected: Invalid authorization token '{auth_token}'"
     elif not valid_freshness:
-        reason = f"Protocol rejected: Reused or stale nonce '{nonce}'"
+        reason = f"Protocol rejected: Reused or stale nonce '{nonce}' (replay attack detected)"
+    elif not valid_channel:
+        reason = "Protocol rejected: Persistent channel noise parameter drift detected"
     elif mismatch_count > s_a:
         reason = f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
     else:

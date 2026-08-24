@@ -6,7 +6,7 @@ explicit calibration context binding, and clean epoch renewals.
 """
 import uuid
 import json
-from typing import Optional, Dict, Any
+from typing import Any
 
 from qsentinel_monitor.persistence.database import get_connection, transaction_scope
 from qsentinel_monitor.persistence.repositories import (
@@ -37,10 +37,10 @@ class StreamLifecycleManager:
     def create_epoch(
         self,
         stream_id: str,
-        calibration_context: Dict[str, Any],
-        stage1_artifact: Optional[CalibrationArtifact] = None,
-        stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-        changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+        calibration_context: dict[str, Any],
+        stage1_artifact: CalibrationArtifact | None = None,
+        stage2_artifact: Stage2CalibrationArtifact | None = None,
+        changepoint_artifact: ChangePointCalibrationArtifact | None = None,
     ) -> EpochRecord:
         """
         Creates a new multi-detector monitoring epoch bound to explicit artifacts and calibration context.
@@ -90,11 +90,11 @@ class StreamLifecycleManager:
     def renew_epoch(
         self,
         stream_id: str,
-        calibration_context: Dict[str, Any],
+        calibration_context: dict[str, Any],
         termination_reason: str = "EXPLICIT_RENEWAL",
-        stage1_artifact: Optional[CalibrationArtifact] = None,
-        stage2_artifact: Optional[Stage2CalibrationArtifact] = None,
-        changepoint_artifact: Optional[ChangePointCalibrationArtifact] = None,
+        stage1_artifact: CalibrationArtifact | None = None,
+        stage2_artifact: Stage2CalibrationArtifact | None = None,
+        changepoint_artifact: ChangePointCalibrationArtifact | None = None,
     ) -> EpochRecord:
         """
         Closes current active epoch and spawns a clean Epoch (index + 1) bound to new/updated artifacts.

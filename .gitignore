@@ -149,4 +149,5 @@ tmp/
 .vscode/
 *.swp
 *.swo
+.freebuff/
 *~

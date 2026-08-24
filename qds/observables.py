@@ -1,6 +1,6 @@
 """Physical observables on a 3-qubit statevector.
 
-Qubit order is |q0 q1 q2⟩ with q0 = Alice message, q1 = Alice EPR, q2 = Bob EPR.
+Qubit order is |q0 q1 q2⟩ with q0 = message, q1 = sender EPR, q2 = recipient EPR.
 """
 
 from __future__ import annotations
@@ -103,7 +103,6 @@ def amplitudes(state: np.ndarray) -> list[dict]:
             label = f"|{KETS[i]}⟩"
             rows.append({
                 "ket": label,
-                "ket": label,
                 "re": round(float(np.real(psi[i])), 6),
                 "im": round(float(np.imag(psi[i])), 6),
                 "p": round(float(np.real(rho[i, i])), 6),
@@ -114,7 +113,6 @@ def amplitudes(state: np.ndarray) -> list[dict]:
     for i, amp in enumerate(state):
         label = f"|{KETS[i]}⟩"
         rows.append({
-            "ket": label,
             "ket": label,
             "re": round(float(np.real(amp)), 6),
             "im": round(float(np.imag(amp)), 6),
@@ -140,7 +138,6 @@ def snapshot(state: np.ndarray, theta: float, note: str = "") -> dict:
     bell_zz = expectation_zz(state, 1, 2)
     infidelity = max(0.0, 1.0 - fid)
     return {
-        "note": note,
         "note": note,
         "amplitudes": amplitudes(state),
         "bloch_bob": bloch_b,

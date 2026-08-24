@@ -5,7 +5,7 @@ Loads and verifies versioned, content-hashed sequential calibration artifacts fr
 PERFORMS NO MONTE CARLO SIMULATION, SEED ALLOCATION, OR RUNTIME CALIBRATION.
 """
 from dataclasses import dataclass
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 import json
 import hashlib
 
@@ -26,15 +26,15 @@ class SequentialCalibrationArtifact:
     architecture_version: str
     stage1_model_version: str
     sequential_model_version: str
-    stage1_calibration_provenance: Dict[str, Any]
-    sequential_configuration: Dict[str, Any]
-    seed_provenance: Dict[str, Any]
+    stage1_calibration_provenance: dict[str, Any]
+    sequential_configuration: dict[str, Any]
+    seed_provenance: dict[str, Any]
     empirical_sequential_threshold: float
-    calibration_summary: Dict[str, Any]
+    calibration_summary: dict[str, Any]
     content_hash: str
 
 
-def compute_sequential_canonical_hash(canonical_payload: Dict[str, Any]) -> str:
+def compute_sequential_canonical_hash(canonical_payload: dict[str, Any]) -> str:
     """
     Computes SHA-256 content hash from canonical JSON string (sorted keys, indent 2, ascii).
     """

@@ -41,9 +41,6 @@ export default function AttackLab() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-display text-lg font-semibold text-heading">Attack channel laboratory</h2>
-            <p className="text-sm text-dim">
-              Each strategy is a real quantum-channel mismatch (intercept-resend, missing EPR, skipped Pauli correction), not a hardcoded label.
-            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <select

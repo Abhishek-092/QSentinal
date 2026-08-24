@@ -3,17 +3,17 @@ Offline analysis script comparing empirical finite-sample critical values agains
 """
 import numpy as np
 import scipy.stats as stats
-from typing import Dict, Any, List
+from typing import Any
 
 from experiments.calibration import generate_calibration_artifact
 
 
 def analyze_small_sample_behavior(
-    p_grid: List[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
+    p_grid: list[float] = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30],
     n_qubits: int = 200,
     alpha: float = 0.01,
     n_trials: int = 200,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generates a calibration table and analyzes empirical vs asymptotic critical value differences across p_grid.
     """

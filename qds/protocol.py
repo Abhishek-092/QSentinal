@@ -64,9 +64,10 @@ def run_session(
     apply_correction = True
 
     if attack == "impersonation":
-        pass
+        config.auth_token = "unauthorized_token"
+        extra_p = 0.18
     elif attack == "clean_forgery":
-        pass
+        extra_p = 0.005
     elif attack == "sub_threshold_forgery":
         extra_p = 0.03
     elif attack == "unauthorized_verification":

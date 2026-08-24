@@ -2,8 +2,8 @@
 Fixed 3-qubit statevector representation for teleportation-distributed QS-L simulation.
 Register layout:
 - Index 0: Message qubit (|ψ⟩)
-- Index 1: Sender's half of Bell pair (Alice)
-- Index 2: Recipient's half of Bell pair (Bob)
+- Index 1: Sender's half of Bell pair
+- Index 2: Recipient's half of Bell pair
 """
 import numpy as np
 

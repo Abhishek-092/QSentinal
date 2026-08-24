@@ -8,7 +8,6 @@ Accumulates sequential generalized likelihood ratio (GLR) evidence deterministic
 PERFORMS ZERO MONTE CARLO, ZERO SEED ALLOCATION, ZERO SIMULATION, AND MUTATES NO PROTOCOL DATA.
 """
 import math
-from typing import Optional, Tuple, Union
 from scipy.special import gammaln
 
 from qsentinel_monitor.quantum_evidence.models import QuantumEvidence, Stage1Result, CalibratedStage1Decision
@@ -126,7 +125,7 @@ def update_stage2_sequential_test(
     stage1_result: Stage1Result,
     sequence_number: int,
     provenance: Stage2ProvenanceIdentity,
-    threshold: Optional[float] = None,
+    threshold: float | None = None,
 ) -> SequentialTestUpdateResult:
     """
     Applies Stage 2 sequential GLR evidence update for a session.

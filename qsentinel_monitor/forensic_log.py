@@ -64,7 +64,6 @@ def _recover_torn_write(lines: list[str]) -> str:
     return "0" * 64
 
 
-import msvcrt
 import threading
 
 _LOG_LOCK = threading.Lock()
@@ -76,6 +75,7 @@ class CrossProcessLock:
         FORENSIC_DIR.mkdir(parents=True, exist_ok=True)
         self.fp = open(LOCK_FILE, "a+")
         if os.name == "nt":
+            import msvcrt
             msvcrt.locking(self.fp.fileno(), msvcrt.LK_LOCK, 1)
         else:
             import fcntl
@@ -85,6 +85,7 @@ class CrossProcessLock:
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
             if os.name == "nt":
+                import msvcrt
                 self.fp.seek(0)
                 msvcrt.locking(self.fp.fileno(), msvcrt.LK_UNLCK, 1)
             else:
@@ -92,7 +93,8 @@ class CrossProcessLock:
                 fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
         except Exception:
             pass
-        self.fp.close()
+        if hasattr(self, "fp") and self.fp:
+            self.fp.close()
 
 
 def append_log_entry(

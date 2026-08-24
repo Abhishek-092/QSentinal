@@ -1,5 +1,5 @@
 """
-Phase 11 Router Package Initialization.
+Router Package Initialization.
 """
 from qsentinel_api.routers.health import router as health_router
 from qsentinel_api.routers.streams import router as streams_router

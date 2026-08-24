@@ -74,7 +74,7 @@ export default function AttackLab() {
         {error && <p className="mt-4 font-mono text-sm text-hot">{error}</p>}
       </div>
 
-      <QuantumSimPanel snapshot={snap} title="Reconstructed Bob state after the chosen channel" />
+      <QuantumSimPanel snapshot={snap} title="Reconstructed recipient state after the chosen channel" />
 
       {sessionResult && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

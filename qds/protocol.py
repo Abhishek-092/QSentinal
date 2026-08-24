@@ -4,7 +4,7 @@ Executes protocol sessions and enforces the authoritative asymmetric threshold r
 Output arrays are stored as immutable tuples in SessionTranscript.
 """
 from dataclasses import dataclass
-from typing import Optional
+
 import time
 import uuid
 import numpy as np
@@ -21,20 +21,20 @@ class SessionConfig:
     n_qubits: int = 200
     noise_parameter_p: float = 0.02
     message_bit: int = 1
-    s_a_threshold: Optional[int] = None
-    s_v_threshold: Optional[float] = None
-    sender_id: str = "Alice"
-    recipient_id: str = "Bob"
+    s_a_threshold: int | None = None
+    s_v_threshold: float | None = None
+    sender_id: str = "sender"
+    recipient_id: str = "recipient"
     auth_token: str = "valid_token_001"
-    nonce: Optional[str] = None
-    seed: Optional[int] = None
+    nonce: str | None = None
+    seed: int | None = None
 
 
 def run_session(
     config_or_session_id: SessionConfig | str = "default_session",
     noise_p: float = 0.02,
     attack: str | None = None,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     n_qubits: int = 200,
     theta: float = np.pi / 4,
 ) -> SessionTranscript:

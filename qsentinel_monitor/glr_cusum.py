@@ -54,16 +54,17 @@ class GLRCusumMonitor:
         with self._session_factory() as db:
             rows = (
                 db.query(CusumState)
-                .order_by(CusumState.id.asc())
+                .order_by(CusumState.id.desc())
                 .limit(limit)
                 .all()
             )
+            rows.reverse()
             return [
                 {
-                    "session": i + 1,
+                    "session": r.id,
                     "session_id": r.session_id,
-                    "cusum": r.cusum_value,
+                    "cusum": round(r.cusum_value, 4),
                     "drift_detected": r.drift_detected,
                 }
-                for i, r in enumerate(rows)
+                for r in rows
             ]

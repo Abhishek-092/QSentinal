@@ -23,7 +23,7 @@ export default function StreamsPage() {
     async function loadStreams() {
       try {
         // Try loading initial standard stream
-        const sample = await api.getStream("stream-alice-bob-01");
+        const sample = await api.getStream("stream-sender-recipient-01");
         setStreams([sample]);
       } catch {
         setStreams([]);

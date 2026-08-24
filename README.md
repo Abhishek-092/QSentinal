@@ -180,43 +180,64 @@ qsentinel-system/                       # Repository Root
 
 ## 🚀 Running the System
 
-### 1. Offline Stage 2 Calibration
-Generate the offline `CalibrationArtifact` on held-out calibration seeds:
+### Option A: Local Development Run (FastAPI + Vite)
+
+1. **Start Backend API Server (Terminal 1):**
+   ```bash
+   python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+   ```
+
+2. **Start Frontend Dashboard (Terminal 2):**
+   ```bash
+   # From root directory:
+   npm run dev
+
+   # Or directly inside frontend folder:
+   cd frontend && npm install && npm run dev
+   ```
+   Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+### Option B: Docker Container Run (Single Command)
+
+Build and run both the API and persistent volumes (`./db`, `./forensic_store`) via Docker Compose:
 ```bash
-python -m experiments.calibration --trials 50000 --output artifacts/calibration/v1/
+docker compose up --build
 ```
 
-### 2. Run Monte Carlo Attack Evaluation Harness
-Evaluate detection rates across all 7 attack conditions:
-```bash
-python -m experiments.harness --trials 10000 --calibration-artifact artifacts/calibration/v1/artifact.json
-```
+---
 
-### 3. Start Backend API Server
-```bash
-uvicorn api.main:app --reload --port 8000
-```
+### 3. Key CLI Operations & Experiments
 
-### 4. Start Frontend Dashboard
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) in your browser to view the 5 demo screens:
-1. **Live Session:** Interactive step-by-step execution stream (SSE-driven).
-2. **Attack Lab:** Side-by-side comparison of Protocol Decision (Authoritative) vs QSENTINEL (Advisory).
-3. **Quantum Evidence View:** Telemetry metrics ($m, C, H$, Pauli-consistency) and Stage 1 mutual-consistency statistics.
-4. **CUSUM Drift Chart:** Real-time cross-session low-and-slow drift tracking.
-5. **Forensic Log:** Ed25519-signed, hash-chained log viewer with torn-write-tolerant verification.
+* **Verify Forensic Hash Chain Integrity:**
+  ```bash
+  python -c "from qsentinel_monitor.forensic_log import verify_chain; print(verify_chain())"
+  ```
+  *(Or via API: `curl http://127.0.0.1:8000/api/forensics/verify`)*
+
+* **Offline Stage 2 Calibration:**
+  Generate the offline `CalibrationArtifact` on calibration seeds:
+  ```bash
+  python -m experiments.calibration --trials 50000 --output artifacts/calibration/v1/
+  ```
+
+* **Run Monte Carlo Attack Evaluation Harness:**
+  Evaluate detection rates across attack conditions:
+  ```bash
+  python -m experiments.harness --trials 10000 --calibration-artifact artifacts/calibration/v1/artifact.json
+  ```
 
 ---
 
 ## 🔬 Test Suite & Architectural Verification
 
-Execute specific test tiers:
+Execute the complete 154-item test suite or specific test tiers:
 
 ```bash
+# Run All Core Tests
+pytest
+
 # Run Unit Tests
 pytest tests/unit
 
@@ -227,7 +248,7 @@ pytest tests/integration
 pytest tests/statistical
 
 # Run Structural Non-Interference Regression Test
-pytest tests/regression/test_non_interference.py
+pytest tests/test_non_interference.py
 ```
 
 ---

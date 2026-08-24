@@ -63,7 +63,7 @@ class ImpersonationAttack(AttackStrategy):
 class UnauthorizedVerification(AttackStrategy):
     name = "unauthorized_verification"
     noise_p = 0.02
-    description = "Skip Bob's X/Z Pauli correction after Bell measurement."
+    description = "Skip recipient's X/Z Pauli correction after Bell measurement."
 
 
 class ChannelManipulation(AttackStrategy):
@@ -81,19 +81,19 @@ class LowAndSlowDrift(AttackStrategy):
 class InterceptResend(AttackStrategy):
     name = "intercept_resend"
     noise_p = 0.02
-    description = "Measure Alice's EPR qubit in Z and collapse the Bell pair."
+    description = "Measure sender's EPR qubit in Z and collapse the Bell pair."
 
 
 class BasisSpoof(AttackStrategy):
     name = "basis_spoof"
     noise_p = 0.02
-    description = "Intercept Alice's EPR qubit in the X basis."
+    description = "Intercept sender's EPR qubit in the X basis."
 
 
 class EntanglementProbe(AttackStrategy):
     name = "entanglement_probe"
     noise_p = 0.02
-    description = "Extra CNOT from Bob onto Alice's EPR half."
+    description = "Extra CNOT from recipient onto sender's EPR half."
 
 
 ATTACK_REGISTRY: dict[str, AttackStrategy] = {
@@ -112,7 +112,6 @@ ATTACK_REGISTRY: dict[str, AttackStrategy] = {
     ]
 }
 
-ATTACK_REGISTRY = ATTACK_REGISTRY
 
 
 def run_attack(strategy_name: str, session_id: str) -> AttackResult:

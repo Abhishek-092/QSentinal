@@ -52,7 +52,7 @@ def test_evidence_collection_malformed_transcript_rejection():
         accepted=True, reason="ok", mismatch_count=-1, sifted_length=0, s_a=5, s_v=10, session_id="err"
     )
     bad_transcript = SessionTranscript(
-        session_id="err", timestamp=0.0, sender_id="A", recipient_id="B", auth_token="t", nonce="n",
+        session_id="err", timestamp=0.0, sender_id="test-sender", recipient_id="test-recipient", auth_token="test-token", nonce="test-nonce",
         message_bit=0, keys=(), bases=(), recipient_bases=(), bell_outcomes=(), raw_measurements=(),
         sifted_indices=(), mismatch_flags=(), pauli_corrections_applied=(), protocol_decision=protocol_dec, metadata={}
     )

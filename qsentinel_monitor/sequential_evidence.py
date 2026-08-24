@@ -10,7 +10,7 @@ PERFORMS ZERO DISK IO, ZERO ARTIFACT LOADING, ZERO SEED ALLOCATION, ZERO MONTE C
 AND ZERO QDS PROTOCOL MUTATION.
 """
 import math
-from typing import Optional, Tuple
+
 from qsentinel_monitor.quantum_evidence.models import (
     CalibratedStage1Decision,
     CalibrationLookupStatus,
@@ -43,9 +43,9 @@ def create_initial_sequential_state() -> SequentialEvidenceState:
 def update_sequential_evidence(
     previous_state: SequentialEvidenceState,
     decision: CalibratedStage1Decision,
-    sequence_number: Optional[int] = None,
-    sequential_artifact: Optional[SequentialCalibrationArtifact] = None,
-    threshold_t_seq: Optional[float] = None,
+    sequence_number: int | None = None,
+    sequential_artifact: SequentialCalibrationArtifact | None = None,
+    threshold_t_seq: float | None = None,
 ) -> SequentialUpdateResult:
     """
     Computes deterministic state transition:
@@ -111,7 +111,7 @@ def update_sequential_evidence(
 
     # Rule 3b: Phase 6C Sequential Artifact Provenance & Horizon Binding
     effective_threshold: float = 15.0  # Fallback uncalibrated threshold if none provided
-    monitoring_horizon: Optional[int] = None
+    monitoring_horizon: int | None = None
 
     if sequential_artifact is not None:
         st1_prov = sequential_artifact.stage1_calibration_provenance

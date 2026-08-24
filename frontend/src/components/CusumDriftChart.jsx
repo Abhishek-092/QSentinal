@@ -29,21 +29,31 @@ export default function CusumDriftChart() {
     };
   }, [theme]);
 
-  const refresh = async () => {
-    setLoading(true);
-    setError('');
+  const loadHistory = async () => {
     try {
-      await runSession(`cusum-seed-${Date.now().toString(36)}`, 0.03);
       const { history } = await getCusumHistory(50);
       setData(history.length ? history : [{ session: 1, cusum: 0 }]);
     } catch (e) {
       setError(e.message || 'API offline');
+    }
+  };
+
+  const ingestSession = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await runSession(`cusum-seed-${Date.now().toString(36)}`, 0.035);
+      await loadHistory();
+    } catch (e) {
+      setError(e.message || 'Failed to ingest session');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -56,7 +66,7 @@ export default function CusumDriftChart() {
             <p className="text-sm text-dim">Unconditional session ingestion monitoring low-and-slow cumulative bias.</p>
           </div>
           <button
-            onClick={refresh}
+            onClick={ingestSession}
             disabled={loading}
             className="hacker-box-subtle flex items-center gap-2 border border-line bg-ink px-4 py-2 text-sm text-ink-fg hover:border-neon/50 hover:text-neon disabled:opacity-50"
           >

@@ -64,38 +64,70 @@ def _recover_torn_write(lines: list[str]) -> str:
     return "0" * 64
 
 
+import msvcrt
+import threading
+
+_LOG_LOCK = threading.Lock()
+LOCK_FILE = FORENSIC_DIR / ".forensic.lock"
+
+
+class CrossProcessLock:
+    def __enter__(self):
+        FORENSIC_DIR.mkdir(parents=True, exist_ok=True)
+        self.fp = open(LOCK_FILE, "a+")
+        if os.name == "nt":
+            msvcrt.locking(self.fp.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if os.name == "nt":
+                self.fp.seek(0)
+                msvcrt.locking(self.fp.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
+        self.fp.close()
+
+
 def append_log_entry(
     protocol_decision: Any,
     monitoring_decision: Any,
     telemetry: dict[str, Any],
 ) -> dict[str, Any]:
-    """Append a tamper-proof hash-chained log entry."""
-    key = _ensure_key()
-    prev_hash = _last_entry_hash()
+    """Append a tamper-proof hash-chained log entry with strict atomic cross-process serialization."""
+    with _LOG_LOCK, CrossProcessLock():
+        key = _ensure_key()
+        prev_hash = _last_entry_hash()
 
-    payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "session_id": protocol_decision.session_id,
-        "protocol_accepted": protocol_decision.accepted,
-        "protocol_reason": protocol_decision.reason,
-        "monitoring_verdict": monitoring_decision.verdict,
-        "monitoring_details": monitoring_decision.details,
-        "telemetry": telemetry,
-        "prev_hash": prev_hash,
-    }
+        payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "session_id": protocol_decision.session_id,
+            "protocol_accepted": protocol_decision.accepted,
+            "protocol_reason": protocol_decision.reason,
+            "monitoring_verdict": monitoring_decision.verdict,
+            "monitoring_details": monitoring_decision.details,
+            "telemetry": telemetry,
+            "prev_hash": prev_hash,
+        }
 
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    entry_hash = hashlib.sha256(canonical.encode()).hexdigest()
-    signature = key.sign(entry_hash.encode()).hex()
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        entry_hash = hashlib.sha256(canonical.encode()).hexdigest()
+        signature = key.sign(entry_hash.encode()).hex()
 
-    record = {**payload, "entry_hash": entry_hash, "signature": signature}
+        record = {**payload, "entry_hash": entry_hash, "signature": signature}
 
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(record) + "\n")
-        f.flush()
-        os.fsync(f.fileno())
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
 
-    return record
+        return record
 
 
 def verify_chain() -> dict[str, Any]:

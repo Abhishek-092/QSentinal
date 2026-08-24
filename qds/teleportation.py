@@ -8,10 +8,65 @@ from qds.bell_pair import prepare_bell_pair, tensor_product, KET_0, KET_1, GATE_
 from qds.pauli import correct_pauli
 
 
+def apply_physical_attack(
+    psi_3q: np.ndarray,
+    attack: str | None,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Applies physical 3-qubit state evolution for physical attacks prior to Bell measurement."""
+    if not attack:
+        return psi_3q
+
+    if attack in ("intercept_resend", "channel_manipulation_intercept"):
+        # Attacker intercepts Alice's EPR qubit (qubit 1) and measures in Z basis
+        p0 = sum(abs(psi_3q[i]) ** 2 for i in range(8) if ((i >> 1) & 1) == 0)
+        p0 = min(1.0, max(0.0, float(p0)))
+        outcome = 0 if rng.random() < p0 else 1
+        collapsed = psi_3q.copy()
+        for i in range(8):
+            if ((i >> 1) & 1) != outcome:
+                collapsed[i] = 0.0
+        nrm = np.linalg.norm(collapsed)
+        return collapsed / nrm if nrm > 0 else psi_3q
+
+    elif attack in ("basis_spoof", "x_basis_intercept"):
+        # Attacker intercepts qubit 1 in X basis: H1 -> Z-meas -> H1
+        h_1 = tensor_product(np.eye(2, dtype=np.complex128), GATE_H, np.eye(2, dtype=np.complex128))
+        rotated = h_1 @ psi_3q
+        p0 = sum(abs(rotated[i]) ** 2 for i in range(8) if ((i >> 1) & 1) == 0)
+        p0 = min(1.0, max(0.0, float(p0)))
+        outcome = 0 if rng.random() < p0 else 1
+        collapsed = rotated.copy()
+        for i in range(8):
+            if ((i >> 1) & 1) != outcome:
+                collapsed[i] = 0.0
+        nrm = np.linalg.norm(collapsed)
+        if nrm > 0:
+            collapsed /= nrm
+        return h_1 @ collapsed
+
+    elif attack in ("entanglement_probe", "probe"):
+        # Extra CNOT interaction: control = Bob's qubit 2, target = Alice's EPR qubit 1
+        cnot_probe = np.zeros((8, 8), dtype=np.complex128)
+        for i in range(8):
+            q0 = (i >> 2) & 1
+            q1 = (i >> 1) & 1
+            q2 = i & 1
+            if q2 == 1:
+                target_i = (q0 << 2) | ((1 - q1) << 1) | q2
+                cnot_probe[target_i, i] = 1.0
+            else:
+                cnot_probe[i, i] = 1.0
+        return cnot_probe @ psi_3q
+
+    return psi_3q
+
+
 def teleport(
     message_state: np.ndarray,
     rng: np.random.Generator = None,
     apply_correction: bool = True,
+    attack: str | None = None,
 ) -> tuple[tuple[int, int], np.ndarray]:
     """
     Executes quantum teleportation of message_state (1 qubit) using a Bell pair.
@@ -23,10 +78,12 @@ def teleport(
     if rng is None:
         rng = np.random.default_rng()
 
-
     bell_pair = prepare_bell_pair()
     # 3-qubit joint state: message ⊗ bell_pair (dim 8)
     psi_3q = tensor_product(message_state, bell_pair)
+
+    # Physical attack interaction before Bell measurement
+    psi_3q = apply_physical_attack(psi_3q, attack=attack, rng=rng)
 
     # 1. Apply CNOT between qubit 0 (message) and qubit 1 (sender's Bell half)
     # CNOT on qubits (0, 1) in 3-qubit space

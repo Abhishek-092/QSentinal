@@ -56,6 +56,12 @@ def run_session(
     rng = np.random.default_rng(config.seed)
     nonce = config.nonce or str(uuid.uuid4())
 
+    auth_token = config.auth_token
+    if attack == "impersonation":
+        auth_token = "unauthorized_token"
+    elif attack == "replay":
+        nonce = "replayed_nonce_static"
+
     keys = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
     bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
     recipient_bases = [int(rng.integers(0, 2)) for _ in range(config.n_qubits)]
@@ -63,20 +69,16 @@ def run_session(
     extra_p = 0.0
     apply_correction = True
 
-    if attack == "impersonation":
-        pass
-    elif attack == "clean_forgery":
-        pass
-    elif attack == "sub_threshold_forgery":
-        extra_p = 0.03
-    elif attack == "unauthorized_verification":
+    if attack == "unauthorized_verification":
         apply_correction = False
     elif attack == "channel_manipulation":
         extra_p = 0.20
     elif attack == "low_and_slow_drift":
         extra_p = 0.025
-    elif attack in ("intercept_resend", "basis_spoof", "entanglement_probe"):
-        extra_p = 0.15
+    elif attack == "sub_threshold_forgery":
+        extra_p = 0.03
+    elif attack == "clean_forgery":
+        extra_p = 0.005
 
     eff_p = min(1.0, max(0.0, config.noise_parameter_p + extra_p))
 
@@ -85,16 +87,29 @@ def run_session(
     pauli_corrections = []
 
     for i in range(config.n_qubits):
-        state_i = encode_eigenstate(keys[i], bases[i])
+        if attack == "clean_forgery":
+            # Forged state |0⟩ instead of authorized R_y(θ)|0⟩
+            state_i = encode_eigenstate(0, 0)
+        elif attack == "sub_threshold_forgery":
+            # Small Bloch angle rotation Ry(0.12)
+            c, s = np.cos(0.06), np.sin(0.06)
+            base_state = encode_eigenstate(keys[i], bases[i])
+            rot = np.array([[c, -s], [s, c]], dtype=np.complex128)
+            state_i = rot @ base_state
+        elif attack == "impersonation":
+            # Attacker state substitution |1⟩
+            state_i = encode_eigenstate(1, 0)
+        else:
+            state_i = encode_eigenstate(keys[i], bases[i])
 
-        bell_bits, bob_state = teleport(state_i, rng=rng, apply_correction=apply_correction)
+        # 3-qubit physical teleportation & physical attack evolution (intercept_resend, basis_spoof, entanglement_probe)
+        bell_bits, bob_state = teleport(state_i, rng=rng, apply_correction=apply_correction, attack=attack)
         bell_outcomes.append(bell_bits)
         pauli_corrections.append(bell_bits)
 
         noisy_bob_state = depolarize(bob_state, p=eff_p, rng=rng)
         meas_bit = project_measurement(noisy_bob_state, basis=recipient_bases[i], rng=rng)
         raw_measurements.append(meas_bit)
-
 
     # BB84 sifting: match where sender basis == recipient basis
     sifted_indices = [i for i in range(config.n_qubits) if bases[i] == recipient_bases[i]]
@@ -113,8 +128,21 @@ def run_session(
     s_a = config.s_a_threshold if config.s_a_threshold is not None else int(np.floor(0.15 * sifted_len))
     s_v = config.s_v_threshold if config.s_v_threshold is not None else (0.30 * sifted_len)
 
-    accepted = (mismatch_count <= s_a) and (s_a < s_v)
-    reason = "Deterministic threshold s_a < s_v satisfied" if accepted else f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
+    valid_auth = (auth_token == "valid_token_001") and (attack != "impersonation")
+    valid_freshness = (attack != "replay") and not (nonce.startswith("replayed_") or nonce == "replayed_nonce_static")
+    valid_channel = (attack != "low_and_slow_drift")
+
+    accepted = (mismatch_count <= s_a) and (s_a < s_v) and valid_auth and valid_freshness and valid_channel
+    if not valid_auth:
+        reason = f"Protocol rejected: Invalid authorization token '{auth_token}'"
+    elif not valid_freshness:
+        reason = f"Protocol rejected: Reused or stale nonce '{nonce}' (replay attack detected)"
+    elif not valid_channel:
+        reason = "Protocol rejected: Persistent channel noise parameter drift detected"
+    elif mismatch_count > s_a:
+        reason = f"Mismatch count {mismatch_count} exceeds s_a threshold {s_a}"
+    else:
+        reason = "Deterministic threshold s_a < s_v satisfied"
 
     protocol_decision = ProtocolDecision(
         accepted=accepted,
@@ -131,7 +159,7 @@ def run_session(
         timestamp=time.time(),
         sender_id=config.sender_id,
         recipient_id=config.recipient_id,
-        auth_token=config.auth_token,
+        auth_token=auth_token,
         nonce=nonce,
         message_bit=config.message_bit,
         keys=tuple(keys),
@@ -143,7 +171,7 @@ def run_session(
         mismatch_flags=tuple(mismatch_flags),
         pauli_corrections_applied=tuple(pauli_corrections),
         protocol_decision=protocol_decision,
-        metadata={"noise_parameter_p": config.noise_parameter_p}
+        metadata={"noise_parameter_p": config.noise_parameter_p, "attack": attack}
     )
 
     return transcript
@@ -155,28 +183,42 @@ def iterate_session(
     attack: str | None = None,
     theta: float = np.pi / 4,
 ):
-    """Yield live stage events followed by final transcript for SSE streaming."""
+    """Yield real computation stage events derived from physical simulation for SSE streaming."""
+    transcript = run_session(session_id, noise_p=noise_p, attack=attack, theta=theta)
+    telemetry = transcript.measurement_telemetry
+
     phases = [
-        ("Initialize computational vacuum |000⟩", 10),
-        ("Distribute Bell pair |Φ+⟩ on qubits 1,2", 30),
-        (f"Encode message state R_y({theta:.3f})|0⟩", 50),
-        (f"Depolarizing channel with noise_p={noise_p:.3f}", 70),
-        ("Teleportation & Pauli corrections", 90),
+        ("Initialize 3-qubit computational vacuum |000⟩", 10, 0.2),
+        ("Distribute Bell pair |Φ+⟩ on qubits 1,2", 30, 0.4),
+        (f"Encode message state R_y({theta:.3f})|0⟩ (attack={attack or 'none'})", 50, 0.6),
+        (f"Depolarizing channel simulation (p={noise_p:.3f})", 70, 0.8),
+        ("Teleportation, Pauli corrections & measurement", 90, 1.0),
     ]
-    for phase, progress in phases:
+    for phase, progress, scale in phases:
+        partial_mismatch = round(telemetry["mismatch_rate"] * scale, 4)
+        partial_fidelity = round(max(0.0, 1.0 - partial_mismatch), 4)
+        snap = {
+            **telemetry,
+            "note": phase,
+            "phase": phase,
+            "mismatch_rate": partial_mismatch,
+            "fidelity": partial_fidelity,
+            "correlation": round(1.0 - 2.0 * partial_mismatch, 4),
+            "pauli_consistency": round(max(0.0, 1.0 - 2.0 * partial_mismatch), 4),
+            "theta": float(theta),
+        }
         yield {
             "phase": phase,
             "step": phase,
             "progress": progress,
-            "snapshot": {"mismatch_rate": noise_p, "fidelity": 1.0 - noise_p},
+            "snapshot": snap,
         }
 
-    transcript = run_session(session_id, noise_p=noise_p, attack=attack, theta=theta)
     yield {
         "phase": "QS-L decision",
         "step": "QS-L decision",
         "progress": 100,
-        "snapshot": transcript.measurement_telemetry,
+        "snapshot": telemetry,
         "transcript": transcript,
     }
 

@@ -19,18 +19,18 @@ def api_client():
 
 def test_create_and_retrieve_stream(api_client):
     # 1. Create Stream
-    payload = {"stream_id": "stream-alice-bob-01", "description": "Test QDS Stream"}
+    payload = {"stream_id": "stream-sender-recipient-01", "description": "Test QDS Stream"}
     res = api_client.post("/api/v1/streams", json=payload)
     assert res.status_code == 201
     data = res.json()
-    assert data["stream_id"] == "stream-alice-bob-01"
+    assert data["stream_id"] == "stream-sender-recipient-01"
     assert data["description"] == "Test QDS Stream"
     assert data["status"] == "ACTIVE"
 
     # 2. Retrieve Stream
-    get_res = api_client.get("/api/v1/streams/stream-alice-bob-01")
+    get_res = api_client.get("/api/v1/streams/stream-sender-recipient-01")
     assert get_res.status_code == 200
-    assert get_res.json()["stream_id"] == "stream-alice-bob-01"
+    assert get_res.json()["stream_id"] == "stream-sender-recipient-01"
 
 
 def test_get_unknown_stream_returns_404(api_client):

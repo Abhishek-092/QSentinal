@@ -197,17 +197,21 @@ def iterate_session(
     for phase, progress, scale in phases:
         partial_mismatch = round(telemetry["mismatch_rate"] * scale, 4)
         partial_fidelity = round(max(0.0, 1.0 - partial_mismatch), 4)
+        snap = {
+            **telemetry,
+            "note": phase,
+            "phase": phase,
+            "mismatch_rate": partial_mismatch,
+            "fidelity": partial_fidelity,
+            "correlation": round(1.0 - 2.0 * partial_mismatch, 4),
+            "pauli_consistency": round(max(0.0, 1.0 - 2.0 * partial_mismatch), 4),
+            "theta": float(theta),
+        }
         yield {
             "phase": phase,
             "step": phase,
             "progress": progress,
-            "snapshot": {
-                "mismatch_rate": partial_mismatch,
-                "fidelity": partial_fidelity,
-                "correlation": round(1.0 - 2.0 * partial_mismatch, 4),
-                "pauli_consistency": round(max(0.0, 1.0 - 2.0 * partial_mismatch), 4),
-                "theta": float(theta),
-            },
+            "snapshot": snap,
         }
 
     yield {

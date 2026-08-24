@@ -8,6 +8,8 @@ export default function ForensicLog() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [verifying, setVerifying] = useState(false);
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -28,11 +30,19 @@ export default function ForensicLog() {
   useEffect(() => { load(); }, []);
 
   const handleVerify = async () => {
+    setVerifying(true);
     setError('');
     try {
-      setVerification(await verifyForensicChain());
+      const [logData, verifyData] = await Promise.all([
+        getForensicLog(100),
+        verifyForensicChain(),
+      ]);
+      setEntries(logData.entries || []);
+      setVerification(verifyData);
     } catch (e) {
       setError(e.message || 'Verify failed');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -49,14 +59,15 @@ export default function ForensicLog() {
           <div className="flex gap-3">
             <button
               onClick={handleVerify}
-              className="hacker-box-subtle flex items-center gap-2 bg-neon px-4 py-2 font-display text-sm font-bold text-ink hover:bg-acid"
+              disabled={verifying || loading}
+              className="hacker-box-subtle flex items-center gap-2 bg-neon px-4 py-2 font-display text-sm font-bold text-ink hover:bg-acid disabled:opacity-50"
             >
-              {verification?.valid ? <CheckCircle2 size={16} /> : <Shield size={16} />}
-              Verify Chain
+              <RefreshCw size={16} className={verifying ? 'animate-spin' : ''} />
+              {verifying ? 'Verifying...' : 'Verify Chain'}
             </button>
             <button
               onClick={load}
-              disabled={loading}
+              disabled={loading || verifying}
               className="hacker-box-subtle flex items-center gap-2 border border-line bg-ink px-4 py-2 text-sm text-ink-fg hover:border-neon/50 hover:text-neon disabled:opacity-50"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh

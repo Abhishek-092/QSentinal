@@ -13,7 +13,7 @@ import { useTheme } from '../ThemeContext';
 
 const LOGS = [
   '> init QDS register |q0 q1 q2⟩',
-  '> distribute |Φ+⟩ on Alice/Bob EPR',
+  '> distribute |Φ+⟩ on sender/recipient EPR',
   '> encode R_y(θ)|0⟩  θ=0.785 rad',
   '> channel E(ρ)=(1-p)ρ+(p/3)Σσρσ',
   '> teleport + Pauli X^m1 Z^m0',
@@ -41,22 +41,22 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { n: '01', t: 'Bell pair', d: 'H on Alice EPR, CNOT onto Bob. |Φ+⟩ = (|00⟩+|11⟩)/√2.' },
+  { n: '01', t: 'Bell pair', d: 'H on sender EPR, CNOT onto recipient. |Φ+⟩ = (|00⟩+|11⟩)/√2.' },
   { n: '02', t: 'Encode', d: 'Authorized message |ψ(θ)⟩ = R_y(θ)|0⟩ on qubit 0.' },
   { n: '03', t: 'Channel', d: 'Depolarizing Kraus map plus optional adversarial intercept.' },
-  { n: '04', t: 'Teleport', d: 'CNOT·H, Z-measure, Bob applies X^{m1} Z^{m0}.' },
+  { n: '04', t: 'Teleport', d: 'CNOT·H, Z-measure, recipient applies X^{m1} Z^{m0}.' },
   { n: '05', t: 'QS-L', d: 'Accept iff s_a < 0.12 and Pauli Bloch consistency holds.' },
 ];
 
 const ATTACKS = [
-  ['intercept_resend', 'Collapse Alice EPR in Z'],
+  ['intercept_resend', 'Collapse sender EPR in Z'],
   ['basis_spoof', 'X-basis intercept on the Bell half'],
   ['replay', 'No fresh EPR — product state only'],
   ['impersonation', 'Swap |1⟩ for authorized |ψ(θ)⟩'],
-  ['unauthorized_verification', 'Skip Bob’s Pauli correction'],
+  ['unauthorized_verification', 'Skip recipient Pauli correction'],
   ['channel_manipulation', 'Heavy depolarizing on the link'],
   ['clean_forgery', 'Forge |0⟩ instead of R_y(θ)|0⟩'],
-  ['entanglement_probe', 'Extra CNOT from Bob onto Alice'],
+  ['entanglement_probe', 'Extra CNOT from recipient onto sender'],
 ];
 
 function MatrixRain() {

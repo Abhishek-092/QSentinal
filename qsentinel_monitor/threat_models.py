@@ -6,7 +6,7 @@ provenance bundles, and threat assessment contracts.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Any
 
 from qds.transcript import ProtocolDecision, SessionTranscript
 from qsentinel_monitor.quantum_evidence.models import (
@@ -47,9 +47,9 @@ class ThreatSeverity(str, Enum):
 
 @dataclass(frozen=True)
 class ProvenanceBundle:
-    stage1_artifact_hash: Optional[str]
-    stage2_artifact_hash: Optional[str]
-    changepoint_artifact_hash: Optional[str]
+    stage1_artifact_hash: str | None
+    stage2_artifact_hash: str | None
+    changepoint_artifact_hash: str | None
     architecture_version: str = "v9.0"
 
 
@@ -59,9 +59,9 @@ class UnifiedThreatAssessment:
     sequence_number: int
     security_posture: SecurityPosture
     threat_severity: ThreatSeverity
-    contributing_detectors: Tuple[str, ...]
+    contributing_detectors: tuple[str, ...]
     explanation: str
-    estimated_excursion_onset: Optional[int]
+    estimated_excursion_onset: int | None
     stage2_horizon_exceeded: bool
     changepoint_horizon_exceeded: bool
     provenance_bundle: ProvenanceBundle
@@ -81,9 +81,9 @@ class UnifiedMonitoringResult:
     protocol_decision: ProtocolDecision  # Unmutated frozen object
     evidence: QuantumEvidence
     stage1_result: Stage1Result
-    calibrated_stage1_decision: Optional[CalibratedStage1Decision]
-    calibrated_stage2_decision: Optional[CalibratedStage2Decision]
-    calibrated_changepoint_decision: Optional[CalibratedChangePointDecision]
+    calibrated_stage1_decision: CalibratedStage1Decision | None
+    calibrated_stage2_decision: CalibratedStage2Decision | None
+    calibrated_changepoint_decision: CalibratedChangePointDecision | None
     threat_assessment: UnifiedThreatAssessment
     next_unified_state: UnifiedMonitoringState
     is_advisory: bool = True

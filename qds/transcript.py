@@ -4,7 +4,7 @@ SessionTranscript and ProtocolDecision are frozen dataclasses with deep immutabi
 (tuples instead of lists) to guarantee strict non-interference.
 """
 from dataclasses import dataclass
-from typing import Tuple, Dict, Any, Sequence
+from typing import Any, Sequence
 
 
 @dataclass(frozen=True)
@@ -27,19 +27,19 @@ class SessionTranscript:
     auth_token: str
     nonce: str
     message_bit: int
-    keys: Tuple[int, ...]
-    bases: Tuple[int, ...]
-    recipient_bases: Tuple[int, ...]
-    bell_outcomes: Tuple[Tuple[int, int], ...]
-    raw_measurements: Tuple[int, ...]
-    sifted_indices: Tuple[int, ...]
-    mismatch_flags: Tuple[bool, ...]
-    pauli_corrections_applied: Tuple[Tuple[int, int], ...]
+    keys: tuple[int, ...]
+    bases: tuple[int, ...]
+    recipient_bases: tuple[int, ...]
+    bell_outcomes: tuple[tuple[int, int], ...]
+    raw_measurements: tuple[int, ...]
+    sifted_indices: tuple[int, ...]
+    mismatch_flags: tuple[bool, ...]
+    pauli_corrections_applied: tuple[tuple[int, int], ...]
     protocol_decision: ProtocolDecision
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
-    def measurement_telemetry(self) -> Dict[str, Any]:
+    def measurement_telemetry(self) -> dict[str, Any]:
         sifted_len = len(self.sifted_indices)
         mismatch_rate = float(self.protocol_decision.mismatch_count) / float(sifted_len) if sifted_len > 0 else 0.0
         correlation = 1.0 - 2.0 * mismatch_rate
